@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient.js";
+import { api, getUserId } from "../api/client.js";
 import { fetchWithRetry, getApiKey } from "../utils/api.js";
 import { Loader2, Save, Plus, Trash2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import ResumeDisplay from "../components/resume_templates/ResumeDisplay.jsx";
@@ -52,19 +52,16 @@ export default function ResumeBuilder() {
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
+      try {
+        const userId = getUserId();
+        // Since we don't have Supabase Auth session, we use the userId from localStorage
+        const profileData = await api.get(`/api/profiles/${userId}`).catch(() => null);
 
         setResumeData((prev) => ({
           ...prev,
           personal_info: { 
-            full_name: profileData?.full_name || user.user_metadata?.full_name || "",
-            email: user.email || "",
+            full_name: profileData?.full_name || "",
+            email: profileData?.email || "user@example.com",
             phone: profileData?.phone || "",
             location: profileData?.location || "",
             title: profileData?.current_role || "",
@@ -77,6 +74,8 @@ export default function ResumeBuilder() {
               date: ''
           })),
         }));
+      } catch (err) {
+        console.error("Error fetching profile for resume builder:", err);
       }
     };
     fetchUserAndProfile();
@@ -122,7 +121,7 @@ export default function ResumeBuilder() {
 
       const apiKey = getApiKey();
       const response = await fetchWithRetry(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -154,24 +153,18 @@ export default function ResumeBuilder() {
 
   const handleSaveAndPreview = async () => {
     setIsSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      alert("You must be logged in.");
-      return setIsSaving(false);
-    }
-    const { data, error } = await supabase
-      .from("resumes")
-      .insert({ ...resumeData, user_id: user.id, title: `${resumeData.personal_info.full_name}'s Resume` })
-      .select()
-      .single();
-    if (error) {
-        console.error("Save error:", error);
-        alert("Failed to save resume.");
-    } else {
+    try {
+      const userId = getUserId();
+      const data = await api.post('/api/resumes', { ...resumeData, userId, title: `${resumeData.personal_info.full_name}'s Resume` });
+      
       localStorage.setItem("resumeForPreview", JSON.stringify(data));
       navigate("/resume-preview");
+    } catch (error) {
+      console.error("Save error:", error);
+      alert("Failed to save resume.");
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const navigateSection = (direction) => {

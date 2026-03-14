@@ -2,8 +2,9 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { fetchWithRetry, getApiKey } from "../utils/api";
-import { Mic, Send, Bot, User as UserIcon, Loader2, Award, Star, ThumbsDown, ArrowLeft, Settings, Briefcase, BarChart } from "lucide-react";
+import { Mic, Send, Bot, User as UserIcon, Loader2, Award, Star, ThumbsDown, ArrowLeft, Settings, Briefcase, BarChart, History } from "lucide-react";
 import BackgroundAnimation from "../components/UI/BackgroundAnimation.jsx";
+import { api, getUserId } from "../api/client.js";
 import { mockInterviewFeedbackEmpty } from '../data/mockData.js'; // Import mock data
 
 // Import the new local bot avatar GIF
@@ -23,6 +24,9 @@ export default function InterviewPrep() {
     const [messages, setMessages] = useState([]);
     const [transcript, setTranscript] = useState([]);
     const [feedback, setFeedback] = useState(null);
+    const [history, setHistory] = useState([]);
+    const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+    const [currentSessionId, setCurrentSessionId] = useState(null);
     const [inputMessage, setInputMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -43,7 +47,21 @@ export default function InterviewPrep() {
         };
         window.speechSynthesis.onvoiceschanged = loadVoices;
         loadVoices();
+        fetchHistory();
     }, []);
+
+    const fetchHistory = async () => {
+        setIsHistoryLoading(true);
+        try {
+            const userId = getUserId();
+            const data = await api.get(`/api/interviews?userId=${userId}`);
+            setHistory(data || []);
+        } catch (error) {
+            console.error("Error fetching interview history:", error);
+        } finally {
+            setIsHistoryLoading(false);
+        }
+    };
 
 
     const speak = (text) => {
@@ -74,9 +92,17 @@ export default function InterviewPrep() {
         setTranscript([{ speaker: 'SYSTEM', text: `Interview for role: ${jobTitle}` }]);
 
         try {
+            const userId = getUserId();
+            const session = await api.post('/api/interviews', { 
+                userId, 
+                jobTitle, 
+                status: 'in-progress' 
+            });
+            setCurrentSessionId(session._id);
+
             const systemPrompt = `You are an expert interviewer hiring for a "${jobTitle}" position. Start by introducing yourself briefly and then ask the first relevant question (it can be behavioral or technical). Ask only one question at a time.`;
             const apiKey = getApiKey();
-            const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
                 method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: systemPrompt }] }] }),
             });
             if (!response.ok) throw new Error(`API call failed`);
@@ -113,7 +139,7 @@ export default function InterviewPrep() {
             const prompt = `The user has just answered your previous question for the "${jobTitle}" role. Provide brief, constructive feedback in italics, and then ask the next logical question. Ask only one question or provide one piece of feedback at a time.`;
             conversationHistory.unshift({ role: 'user', parts: [{ text: prompt }] });
 
-            const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
                 method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: conversationHistory }),
             });
             if (!response.ok) throw new Error(`API call failed`);
@@ -160,13 +186,24 @@ export default function InterviewPrep() {
             const transcriptText = transcript.map(t => `${t.speaker}: ${t.text}`).join('\n\n');
             const prompt = `You are an expert HR manager and interview coach. Analyze the interview transcript for a "${jobTitle}" position. Provide a detailed performance report. Return ONLY a valid JSON object: { "clarity_confidence_score": number(1-100), "star_method_score": number(1-100), "keyword_score": number(1-100), "overall_feedback": "string", "strengths": ["string"], "areas_for_improvement": ["string"] }`;
             const apiKey = getApiKey();
-            const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
                 method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: `TRANSCRIPT:\n\n${transcriptText}\n\n${prompt}` }] }], generationConfig: { responseMimeType: "application/json" } }),
             });
             if (!response.ok) throw new Error('Feedback generation failed');
             const data = await response.json();
             const result = JSON.parse(data.candidates[0].content.parts[0].text);
+            
+            // Save feedback to backend
+            if (currentSessionId) {
+                await api.put(`/api/interviews/${currentSessionId}`, {
+                    status: 'completed',
+                    feedback: result,
+                    transcript: transcript.map(t => ({ speaker: t.speaker, content: t.text }))
+                });
+            }
+            
             setFeedback(result);
+            fetchHistory(); // Refresh history
         } catch (error) {
             console.error("Feedback error:", error);
             setFeedback({ error: "Could not generate feedback. Please try again." });

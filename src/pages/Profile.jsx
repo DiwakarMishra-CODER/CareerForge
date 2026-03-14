@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { supabase } from "../supabaseClient.js";
+import { api, getUserId } from "../api/client.js";
 import {
   User,
   Camera,
@@ -648,18 +648,10 @@ export default function Profile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        if (error && error.code !== "PGRST116") {
-          console.error("Error fetching profile:", error);
-        } else if (data) {
+      try {
+        const userId = getUserId();
+        try {
+          const data = await api.get(`/api/profiles/${userId}`);
           const profileData = {
             ...initialProfileState,
             ...data,
@@ -669,41 +661,33 @@ export default function Profile() {
           setFormData(profileData);
           setOriginalData(profileData);
           setIsEditing(false);
-        } else {
-          const newUserData = {
-            ...initialProfileState,
-            full_name: user.user_metadata?.full_name || "",
-            email: user.email,
-            profile_picture_url: user.user_metadata?.avatar_url || "",
-          };
-          setFormData(newUserData);
-          setOriginalData(newUserData);
+        } catch (err) {
+          console.log("Profile not found, staying in edit mode");
           setIsEditing(true);
         }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchProfile();
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return alert("You must be logged in.");
-
-    const { error } = await supabase
-      .from("profiles")
-      .upsert({ ...formData, id: user.id, updated_at: new Date() });
-    if (error) {
-      alert("Failed to save profile.");
-    } else {
+    try {
+      const userId = getUserId();
+      await api.post('/api/profiles', { ...formData, userId });
       alert("Profile saved successfully!");
       setOriginalData(formData);
       setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      alert("Failed to save profile.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleCancel = () => {
@@ -713,32 +697,26 @@ export default function Profile() {
 
   const handlePictureUpload = async (e) => {
     const file = e.target.files[0];
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!file || !user) return;
+    if (!file) return;
+
     setUploading(true);
-    const filePath = `${user.id}/${Date.now()}`;
     try {
-      await supabase.storage.from("profile-pictures").upload(filePath, file);
-      const { data } = supabase.storage
-        .from("profile-pictures")
-        .getPublicUrl(filePath);
-      const publicUrl = data.publicUrl;
-
-      await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
-      await supabase
-        .from("profiles")
-        .upsert({
-          id: user.id,
-          profile_picture_url: publicUrl,
-          avatar_url: publicUrl,
-        });
-
-      window.location.reload();
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      
+      const { url } = await api.upload('/api/upload/profile-picture', formDataUpload);
+      
+      const updatedProfile = { ...formData, profile_picture_url: url };
+      setFormData(updatedProfile);
+      
+      const userId = getUserId();
+      await api.post('/api/profiles', { ...updatedProfile, userId });
+      
+      alert("Profile picture updated!");
+      setOriginalData(updatedProfile);
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("Failed to upload image. Check storage policies.");
+      alert("Failed to upload image.");
     } finally {
       setUploading(false);
     }

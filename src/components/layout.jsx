@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation, useNavigate, Outlet, NavLink } from "react-router-dom";
-import { supabase } from "../supabaseClient.js";
+import { api, getUserId, getToken } from "../api/client.js";
 import {
   LayoutDashboard,
   FileText,
@@ -88,84 +88,44 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // FIX 1: Ref to store mutable navigation values for the single-run useEffect
-  const navigationRef = useRef({ navigate, location });
-
   useEffect(() => {
-    // FIX 2: Update the ref on every render to ensure it holds the current navigate/location functions
-    navigationRef.current = { navigate, location };
-  });
-
-  useEffect(() => {
-    let isMounted = true; 
-
-    // Async function to handle auth state and profile fetch
-    const handleAuthStateChange = async (session) => {
-      if (!isMounted) return;
-
-      setIsLoading(false); 
-
+    const initApp = async () => {
+      setIsLoading(true);
       try {
-        const currentUser = session?.user;
-        
-        if (isMounted) {
-            setUser(currentUser ?? null);
+        const token = getToken();
+        if (!token) {
+          navigate("/signin");
+          return;
         }
 
-        let profileData = null;
-        if (currentUser) {
-          // Fetch profile data
-          const { data, error } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", currentUser.id)
-            .single();
-            
-          // Check for the "no rows found" error code (PGRST116)
-          if (error && error.code !== "PGRST116") {
-            console.error("Error fetching profile:", error);
-          } else if (data) {
-            profileData = data;
-          }
+        // Fetch current user details from /me
+        try {
+          const userData = await api.get('/api/auth/me');
+          setUser(userData);
+          
+          // Fetch profile
+          const profileData = await api.get(`/api/profiles/${userData._id}`);
+          setProfile(profileData);
+        } catch (err) {
+          console.error("Auth initialization failed:", err);
+          localStorage.removeItem("nexagen_token");
+          localStorage.removeItem("nexagen_user");
+          navigate("/signin");
         }
-        
-        if (isMounted) {
-            setProfile(profileData);
-        }
-
-        // Use the current values from the ref for redirection logic
-        const { navigate: currentNavigate, location: currentLocation } = navigationRef.current;
-        
-        if (!currentUser && currentLocation.pathname !== "/signin") {
-          currentNavigate("/signin");
-        }
-        
       } catch (error) {
-        console.error("Layout auth/profile error during state change:", error);
+        console.error("Layout initialization error:", error);
       } finally {
-        // IMPORTANT: Ensure loading is set to false regardless of success or failure
-        if (isMounted) {
-            setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
-    // Set up the listener only once on mount
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-          handleAuthStateChange(session);
-      }
-    );
+    initApp();
+  }, [navigate]);
 
-    // Cleanup function: Unsubscribe the listener and mark as unmounted
-    return () => {
-      isMounted = false;
-      authListener.subscription.unsubscribe();
-    };
-  }, []); // FIX 3: Empty dependency array ensures this listener is set up only once.
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    localStorage.removeItem("nexagen_token");
+    localStorage.removeItem("nexagen_user");
+    localStorage.removeItem("nexagen_user_id");
     navigate("/signin");
   };
 
@@ -196,7 +156,8 @@ export default function Layout() {
     );
   }
   
-  const avatarUrl = profile?.profile_picture_url || user?.user_metadata?.avatar_url;
+  const avatarUrl = profile?.profile_picture_url;
+  const displayName = profile?.full_name || user?.firstName || "User";
 
   return (
     <div className="h-screen bg-gray-950 text-white flex flex-col">
@@ -246,7 +207,7 @@ export default function Layout() {
                   />
                 ) : (
                   <div className="w-full h-full bg-emerald-900 flex items-center justify-center text-emerald-300 font-bold">
-                    {user?.email?.charAt(0).toUpperCase() || "U"}
+                    {displayName.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
@@ -305,7 +266,6 @@ export default function Layout() {
         >
           {isChatOpen ? <X className="w-8 h-8 text-white" /> : <MessageSquare className="w-8 h-8 text-white" />}
         </button>
-
         {isChatOpen && <ChatWidget onClose={() => setIsChatOpen(false)} />}
       </main>
     </div>

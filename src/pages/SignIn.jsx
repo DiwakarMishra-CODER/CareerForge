@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
-import { Mail, Lock, User as UserIcon } from "lucide-react";
+import { api } from "../api/client.js";
+import { Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
 import nexaGenLogo from "../assets/logo.png"; // Ensure you have a logo image in the assets folder
 
 const GoogleIcon = () => (
@@ -40,74 +40,86 @@ export default function SignIn() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/dashboard");
-      }
-    };
-    checkUser();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+  const handleGoogleCallback = useCallback(async (response) => {
+    setLoading(true);
+    try {
+      const data = await api.post('/api/auth/google', { idToken: response.credential });
+      
+      // Save token and user info
+      localStorage.setItem('nexagen_token', data.token);
+      localStorage.setItem('nexagen_user', JSON.stringify(data));
+      localStorage.setItem('nexagen_user_id', data.userId);
+
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Google Auth error:", error);
+      alert(error.message || "Google Authentication failed");
+    } finally {
+      setLoading(false);
+    }
   }, [navigate]);
 
+  useEffect(() => {
+    const token = localStorage.getItem('nexagen_token');
+    if (token) {
+      navigate("/dashboard");
+      return;
+    }
+
+    if (googleClientId && window.google) {
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: handleGoogleCallback,
+      });
+
+      window.google.accounts.id.renderButton(
+        document.getElementById("googleSignInButton"),
+        { theme: "outline", size: "large", width: '100%' }
+      );
+    }
+  }, [googleClientId, handleGoogleCallback, navigate]);
+
   const handleEmailPasswordAuth = async (isSignUpFlow) => {
+    if (!email || !password || (isSignUpFlow && (!firstName || !lastName))) {
+        alert("Please fill in all fields");
+        return;
+    }
+
     setLoading(true);
     try {
-      const authFunction = isSignUpFlow
-        ? supabase.auth.signUp
-        : supabase.auth.signInWithPassword;
-      const { error } = await authFunction({ email, password });
-      if (error) throw error;
+      const endpoint = isSignUpFlow ? '/api/auth/register' : '/api/auth/login';
+      const body = isSignUpFlow 
+        ? { email, password, firstName, lastName }
+        : { email, password };
+
+      const data = await api.post(endpoint, body);
+      
+      // Save token and user info
+      localStorage.setItem('nexagen_token', data.token);
+      localStorage.setItem('nexagen_user', JSON.stringify(data));
+      localStorage.setItem('nexagen_user_id', data.userId);
 
       if (isSignUpFlow) {
-        alert(
-          "Account created! Please check your email to confirm your account."
-        );
-        setIsSignUp(false);
-      } else {
-        navigate("/dashboard");
+        alert("Account created successfully!");
       }
+      navigate("/dashboard");
     } catch (error) {
       console.error("Authentication error:", error);
-      alert(error.error_description || error.message);
+      alert(error.message || "Authentication failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error signing in with Google:", error);
-      alert(error.error_description || error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGitHubSignIn = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "github",
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error signing in with GitHub:", error);
-      alert(error.error_description || error.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleGitHubSignIn = () => {
+      alert("GitHub login is coming soon. Please use Google or Email/Password for now.");
   };
 
   return (
@@ -120,17 +132,12 @@ export default function SignIn() {
           className="hidden lg:flex lg:w-1/2 bg-cover bg-center flex-col justify-center items-center p-10 relative"
           style={{ backgroundColor: "#211E30" }}
         >
-          <div
-            className="hidden lg:flex lg:w-1/2 bg-cover bg-center flex-col justify-center items-center p-10 relative"
-            style={{ backgroundColor: "#211E30" }}
-          >
-            <div className="w-96 h-96 flex items-center justify-center">
-              <img
-                src={nexaGenLogo}
-                alt="NexaGen AI Logo"
-                className="w-full h-full object-contain"
-              />
-            </div>
+          <div className="w-96 h-96 flex items-center justify-center">
+            <img
+              src={nexaGenLogo}
+              alt="NexaGen AI Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
 
@@ -159,6 +166,8 @@ export default function SignIn() {
                   <input
                     type="text"
                     placeholder="First Name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-emerald-500 transition-colors"
                   />
                 </div>
@@ -170,6 +179,8 @@ export default function SignIn() {
                   <input
                     type="text"
                     placeholder="Last Name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-emerald-500 transition-colors"
                   />
                 </div>
@@ -204,27 +215,12 @@ export default function SignIn() {
               />
             </div>
 
-            {isSignUp && (
-              <div className="flex items-center mt-2">
-                <input
-                  id="terms"
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-emerald-500 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500"
-                />
-                <label htmlFor="terms" className="ml-2 text-sm text-gray-400">
-                  I agree to the{" "}
-                  <span className="text-emerald-400 hover:underline cursor-pointer">
-                    Terms & Conditions
-                  </span>
-                </label>
-              </div>
-            )}
-
             <button
               onClick={() => handleEmailPasswordAuth(isSignUp)}
               disabled={loading}
-              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white font-semibold text-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white font-semibold text-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              {loading && <Loader2 size={20} className="animate-spin" />}
               {loading
                 ? isSignUp
                   ? "Creating account..."
@@ -244,18 +240,12 @@ export default function SignIn() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="flex-1 flex justify-center items-center py-3 px-4 border border-gray-700 rounded-lg text-white font-medium bg-gray-700/50 hover:bg-gray-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-            >
-              <GoogleIcon /> Google
-            </button>
+          <div className="flex flex-col gap-4">
+            <div id="googleSignInButton" className="w-full"></div>
+            
             <button
               onClick={handleGitHubSignIn}
-              disabled={loading}
-              className="flex-1 flex justify-center items-center py-3 px-4 border border-gray-700 rounded-lg text-white font-medium bg-gray-700/50 hover:bg-gray-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+              className="flex justify-center items-center py-3 px-4 border border-gray-700 rounded-lg text-white font-medium bg-gray-700/50 hover:bg-gray-700 transition-colors"
             >
               <GitHubIcon /> GitHub
             </button>

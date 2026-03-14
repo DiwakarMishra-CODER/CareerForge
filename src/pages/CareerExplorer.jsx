@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from "react-router-dom";
 import { fetchWithRetry, getApiKey } from '../utils/api';
 import { Map, Loader2, Sparkles, BookOpen, BrainCircuit, HeartPulse, Palette, Briefcase, Atom, ArrowLeft, Target, TrendingUp, Youtube, Globe, FileText, CalendarDays, CheckCircle, Search, History, ArrowRight } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { api, getUserId } from '../api/client.js';
 
 const careerFields = [
   { name: 'Technology', icon: BrainCircuit, color: 'text-cyan-400' },
@@ -71,13 +71,13 @@ const RoadmapHistory = ({ history, onSelect, isLoading }) => {
               <ul className="space-y-3">
                   {history.map(item => (
                       <button 
-                          key={item.id} 
+                          key={item._id || item.id} 
                           onClick={() => onSelect(item)} 
                           className="w-full text-left p-3 bg-gray-800/50 rounded-lg flex items-center justify-between hover:bg-gray-700/80 transition-colors"
                       >
                           <div>
                               <p className="font-medium text-white">{item.career_goal}</p>
-                              <p className="text-xs text-gray-400">Created: {new Date(item.created_at).toLocaleDateString()}</p>
+                              <p className="text-xs text-gray-400">Created: {new Date(item.createdAt || item.created_at).toLocaleDateString()}</p>
                           </div>
                           <ArrowRight size={16} className="text-purple-400 flex-shrink-0" />
                       </button>
@@ -118,30 +118,21 @@ export default function CareerExplorer() {
     }
   }, [roadmap, completedMilestones]);
 
-  useEffect(() => {
-    async function fetchRoadmapHistory() {
-        setIsHistoryLoading(true);
-        if (!user) {
-            setIsHistoryLoading(false);
-            return;
-        }
-        const { data, error } = await supabase
-            .from('career_roadmaps')
-            .select('id, career_goal, created_at')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Error fetching roadmap history:', error);
-        } else {
-            setHistory(data || []);
-        }
+  const fetchRoadmapHistory = async () => {
+    setIsHistoryLoading(true);
+    try {
+        const userId = getUserId();
+        const data = await api.get(`/api/roadmaps?userId=${userId}`);
+        setHistory(data || []);
+    } catch (error) {
+        console.error('Error fetching roadmap history:', error);
+    } finally {
         setIsHistoryLoading(false);
     }
+  };
 
-    if (user) {
-        fetchRoadmapHistory();
-    }
+  useEffect(() => {
+    fetchRoadmapHistory();
   }, [user]);
 
   const handleResourceComplete = (resourceQuery) => {
@@ -174,25 +165,19 @@ export default function CareerExplorer() {
   
   const handleSelectHistoricalRoadmap = async (roadmapItem) => {
     setIsLoading(true);
-    const { data, error } = await supabase
-        .from('career_roadmaps')
-        .select('*')
-        .eq('id', roadmapItem.id)
-        .single();
-    
-    if (error) {
+    try {
+        const data = await api.get(`/api/roadmaps/${roadmapItem._id || roadmapItem.id}`);
+        setRoadmap(data);
+        setJobTitle(data.career_goal);
+        setCompletedMilestones(new Set(data.milestones?.filter(m => m.status === 'completed').map(m => m.title) || []));
+        setCompletedResources(new Set(data.completed_resources || []));
+        setStep('roadmapDisplay');
+    } catch (error) {
         console.error('Error fetching roadmap details:', error);
         alert('Failed to load roadmap details. Please try again.');
+    } finally {
         setIsLoading(false);
-        return;
     }
-
-    setRoadmap(data);
-    setJobTitle(data.career_goal);
-    setCompletedMilestones(new Set(data.milestones?.filter(m => m.status === 'completed').map(m => m.title) || []));
-    setCompletedResources(new Set(data.completed_resources || []));
-    setStep('roadmapDisplay');
-    setIsLoading(false);
   };
 
   const generateRoadmap = async () => {
@@ -224,7 +209,7 @@ export default function CareerExplorer() {
         Return ONLY a valid JSON object with the structure: { "career_goal": "string", "timeline_months": number, "milestones": [ { "title": "string", "description": "string", "skills_gained": ["string"], "suggested_resources": [ { "title": "string", "type": "string", "provider": "string", "search_query": "string" } ] } ] }`;
 
       const apiKey = getApiKey();
-      const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -232,42 +217,40 @@ export default function CareerExplorer() {
           generationConfig: { responseMimeType: "application/json" },
         }),
       });
-      if (!response.ok) throw new Error("API request for roadmap failed");
+      if (!response.ok) {
+          const errText = await response.text();
+          console.error("Gemini API Error Response:", errText);
+          throw new Error(`API request for roadmap failed: ${response.status}`);
+      }
       const data = await response.json();
+      console.log("Gemini API raw response:", data);
       const result = JSON.parse(data.candidates[0].content.parts[0].text);
+      console.log("Parsed result:", result);
       setRoadmap(result);
       
-      if (user) {
-          console.log("Attempting to save new roadmap to Supabase...");
-          const { error } = await supabase
-              .from('career_roadmaps')
-              .insert({
-                  user_id: user.id,
-                  career_goal: result.career_goal,
-                  title: result.career_goal,
-                  timeline_months: result.timeline_months,
-                  milestones: result.milestones,
-                  ai_generated: true,
-                  progress_percentage: 0
-              });
-
-          if (error) {
-              console.error("Error saving new roadmap:", error);
-              alert("Failed to save the new roadmap to your history. Please check the browser console for details.");
-          } else {
-              console.log("Roadmap successfully saved!");
-              // After saving, you may want to re-fetch the history to update the list
-              // However, for this solution, we assume the initial fetch will grab it on reload
-          }
-      } else {
-          console.warn("User is not logged in. Skipping database save for roadmap.");
-      }
+      const userId = getUserId();
+      console.log("Saving roadmap to backend...");
+      await api.post('/api/roadmaps', {
+          userId,
+          career_goal: result.career_goal,
+          title: result.career_goal,
+          timeline_months: result.timeline_months,
+          milestones: result.milestones,
+          ai_generated: true,
+          progress_percentage: 0
+      });
+      console.log("Roadmap saved successfully to backend");
 
       setCachedData(jobTitle, { roadmap: result, completedMilestones: new Set(), completedResources: new Set() });
       setStep('roadmapDisplay');
+      fetchRoadmapHistory(); // Refresh history
     } catch (error) {
       console.error("Roadmap generation error:", error);
-      alert("Failed to generate roadmap. Please try again.");
+      if (error.message.includes("429") || error.message.includes("rate limit")) {
+          alert("We've reached our AI generation limit for now. Please wait a minute and try again, or add more API keys to your configuration.");
+      } else {
+          alert("Failed to generate roadmap. Please check your internet connection and try again.");
+      }
       setStep('roleInput');
     } finally {
       setIsLoading(false);
@@ -287,7 +270,7 @@ export default function CareerExplorer() {
             Return ONLY a valid JSON object. For a "weekly" plan, keys should be "Week 1", "Week 2", etc. For "monthly", use "Month 1", etc. Each period should contain an array of specific tasks as strings.`;
         
         const apiKey = getApiKey();
-        const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { supabase } from "../supabaseClient.js";
+import { api } from "../api/client.js";
 import Footer from "../components/UI/Footer.jsx";
 import { fetchWithRetry, getApiKey } from "../utils/api.js";
 import {
@@ -27,50 +27,6 @@ const iconMap = {
   Brain: Brain,
 };
 
-// --- Caching Logic ---
-const CACHE_KEY = 'dashboard_data';
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
-
-const getCachedData = () => {
-  try {
-    const cached = sessionStorage.getItem(CACHE_KEY);
-    if (!cached) return null;
-
-    const { data, timestamp } = JSON.parse(cached);
-
-    if (Date.now() - timestamp > CACHE_DURATION_MS) {
-      sessionStorage.removeItem(CACHE_KEY);
-      return null;
-    }
-    
-    if (data.recentActivity && data.recentActivity.some(item => typeof item.icon !== 'string')) {
-        console.warn("Invalid cache format detected. Clearing cache.");
-        sessionStorage.removeItem(CACHE_KEY);
-        return null;
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Failed to read or validate cache. Clearing it.", error);
-    sessionStorage.removeItem(CACHE_KEY);
-    return null;
-  }
-};
-
-const setCachedData = (data) => {
-  try {
-    const cachePayload = {
-      data,
-      timestamp: Date.now(),
-    };
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
-  } catch (error) {
-    console.error("Failed to write to cache:", error);
-  }
-};
-// --- End Caching Logic ---
-
-
 export default function Dashboard() {
   const { user, profile } = useOutletContext();
   const [dataLoading, setDataLoading] = useState(true);
@@ -83,84 +39,67 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadData = async () => {
-      // **CRITICAL FIX**: First, try to load everything from cache.
-      const cachedData = getCachedData();
-      if (cachedData) {
-        setLatestRoadmap(cachedData.latestRoadmap);
-        setStats(cachedData.stats);
-        setRecentActivity(cachedData.recentActivity);
-        setAiSuggestion(cachedData.aiSuggestion);
-        setDataLoading(false);
-        // Data is fresh enough, no need to re-fetch.
-        return; 
-      }
-
-      // If no valid cache, then proceed to fetch from the network.
       setDataLoading(true);
       if (user) {
         if (!profile || !profile.full_name) {
           setShowProfileReminder(true);
         }
 
-        const [
-          resumeRes, 
-          roadmapRes, 
-          interviewsRes, 
-          latestRoadmapRes,
-          recentResumes, 
-          recentRoadmaps, 
-          recentInterviews
-        ] = await Promise.all([
-            supabase.from("resumes").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-            supabase.from("career_roadmaps").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-            supabase.from("interview_sessions").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-            supabase.from("career_roadmaps").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
-            supabase.from("resumes").select("title, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(3),
-            supabase.from("career_roadmaps").select("title, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(3),
-            supabase.from("interview_sessions").select("job_title, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(3),
-        ]);
-        
-        const newLatestRoadmap = latestRoadmapRes.data?.[0] || null;
-        setLatestRoadmap(newLatestRoadmap);
+        try {
+          const userId = user.id;
+          const [
+            resumeCountRes, 
+            roadmapCountRes, 
+            interviewsCountRes, 
+            recentRoadmaps,
+            recentResumes, 
+            recentInterviews
+          ] = await Promise.all([
+            api.get(`/api/resumes/count?userId=${userId}`),
+            api.get(`/api/roadmaps/count?userId=${userId}`),
+            api.get(`/api/interviews/count?userId=${userId}`),
+            api.get(`/api/roadmaps/recent?userId=${userId}&limit=1`),
+            api.get(`/api/resumes/recent?userId=${userId}&limit=3`),
+            api.get(`/api/interviews/recent?userId=${userId}&limit=3`),
+          ]);
+          
+          const newLatestRoadmap = recentRoadmaps[0] || null;
+          setLatestRoadmap(newLatestRoadmap);
 
-        const newStats = {
-          resumes: resumeRes.count || 0,
-          roadmaps: roadmapRes.count || 0,
-          interviews: interviewsRes.count || 0,
-          certifications: profile?.certifications?.length || 0,
-        };
-        setStats(newStats);
+          const newStats = {
+            resumes: resumeCountRes.count || 0,
+            roadmaps: roadmapCountRes.count || 0,
+            interviews: interviewsCountRes.count || 0,
+            certifications: profile?.certifications?.length || 0,
+          };
+          setStats(newStats);
 
-        const activities = [];
-        if (recentResumes.data) activities.push(...recentResumes.data.map(i => ({ type: "Resume created", title: i.title, date: i.created_at, link: "/resume-builder", icon: 'FileText' })));
-        if (recentRoadmaps.data) activities.push(...recentRoadmaps.data.map(i => ({ type: "Roadmap generated", title: i.title, date: i.created_at, link: "/career-explorer", icon: 'Map' })));
-        if (recentInterviews.data) activities.push(...recentInterviews.data.map(i => ({ type: "Interview practiced", title: i.job_title, date: i.created_at, link: "/interview-prep", icon: 'Brain' })));
-        
-        const newRecentActivity = activities.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-        setRecentActivity(newRecentActivity);
+          const activities = [];
+          if (recentResumes) activities.push(...recentResumes.map(i => ({ type: "Resume created", title: i.title, date: i.createdAt, link: "/resume-builder", icon: 'FileText' })));
+          if (recentRoadmaps) activities.push(...recentRoadmaps.map(i => ({ type: "Roadmap generated", title: i.title, date: i.createdAt, link: "/career-explorer", icon: 'Map' })));
+          if (recentInterviews) activities.push(...recentInterviews.map(i => ({ type: "Interview practiced", title: i.job_title, date: i.createdAt, link: "/interview-prep", icon: 'Brain' })));
+          
+          const newRecentActivity = activities.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+          setRecentActivity(newRecentActivity);
 
-        let newAiSuggestion = null;
-        if (profile && profile.current_role && profile.career_goals) {
-          try {
-            const apiKey = getApiKey();
-            const response = await fetchWithRetry(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-              { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: `Based on this user's profile (Role: ${profile.current_role}, Goal: ${profile.career_goals}), provide one single, short, and actionable suggestion for their next career step. Be encouraging.` }] }] }) }
-            );
-            if (response.ok) {
-              const data = await response.json();
-              newAiSuggestion = data.candidates[0].content.parts[0].text.trim();
-              setAiSuggestion(newAiSuggestion);
-            }
-          } catch (e) { console.error("AI suggestion fetch failed:", e); }
+          let newAiSuggestion = null;
+          if (profile && profile.current_role && profile.career_goals) {
+            try {
+              const apiKey = getApiKey();
+              const response = await fetchWithRetry(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+                { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: `Based on this user's profile (Role: ${profile.current_role}, Goal: ${profile.career_goals}), provide one single, short, and actionable suggestion for their next career step. Be encouraging.` }] }] }) }
+              );
+              if (response.ok) {
+                const data = await response.json();
+                newAiSuggestion = data.candidates[0].content.parts[0].text.trim();
+                setAiSuggestion(newAiSuggestion);
+              }
+            } catch (e) { console.error("AI suggestion fetch failed:", e); }
+          }
+        } catch (error) {
+          console.error("Dashboard data load error:", error);
         }
-
-        setCachedData({
-          latestRoadmap: newLatestRoadmap,
-          stats: newStats,
-          recentActivity: newRecentActivity,
-          aiSuggestion: newAiSuggestion,
-        });
       }
       setDataLoading(false);
     };

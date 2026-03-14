@@ -1,7 +1,7 @@
 // src/pages/ResumeAnalyzer.jsx
 
 import React, { useState, useRef, useEffect } from "react";
-import { supabase } from "../supabaseClient.js";
+import { api, getUserId } from "../api/client.js";
 import { fetchWithRetry, getApiKey } from "../utils/api.js";
 import {
   Upload,
@@ -25,10 +25,12 @@ export default function ResumeAnalyzer() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const { data } = await supabase.from("profiles").select("skills").eq("id", user.id).single();
+        try {
+            const userId = getUserId();
+            const data = await api.get(`/api/profiles/${userId}`).catch(() => null);
             setProfile(data);
+        } catch (err) {
+            console.error("Error fetching profile for analyzer:", err);
         }
     };
     fetchProfile();
@@ -70,7 +72,6 @@ export default function ResumeAnalyzer() {
           let prompt;
 
           if (jobDescription.trim()) {
-            // --- MODIFIED PROMPT FOR JOB MATCH ---
             prompt = `You are an expert HR tech analyst. Analyze the provided resume text against the job description, considering the user's listed skills from their profile.
 
               - **Job Description**: """${jobDescription}"""
@@ -81,7 +82,6 @@ export default function ResumeAnalyzer() {
 
               Return ONLY a valid JSON object with the structure: { "job_match_score": number, "missing_keywords": ["string"], "improvement_suggestions": ["string"], "suitable_roles": ["string"] }`;
           } else {
-            // --- NEW PROMPT FOR GENERAL ANALYSIS ---
             prompt = `You are an expert HR tech analyst. Analyze the following resume and identify the key skills, experiences, and qualifications. Based on this analysis, suggest 5-6 suitable job roles that the person could fit into.
 
               - **Resume Text**: """${textContent}"""
@@ -93,7 +93,7 @@ export default function ResumeAnalyzer() {
 
           const apiKey = getApiKey();
           const response = await fetchWithRetry(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
