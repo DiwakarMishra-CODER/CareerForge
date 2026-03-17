@@ -9,27 +9,32 @@ import ResumeAnalyzer from "./pages/ResumeAnalyzer.jsx";
 import CareerExplorer from "./pages/CareerExplorer.jsx";
 import AboutUs from "./pages/AboutUs.jsx";
 import ResumePreview from "./pages/ResumePreview.jsx";
-import InterviewPrep from "./pages/InterviewPrep.jsx";
-import Strategies from "./pages/Strategies.jsx";
-import CareerCompass from "./pages/CareerCompass.jsx";
+import InterviewPrep from "./pages/MockInterview.jsx";
+import InterviewHistory from "./pages/InterviewHistory.jsx";
+// import Strategies from "./pages/Strategies.jsx";
+// import CareerCompass from "./pages/CareerCompass.jsx";
 import JobDetails from "./pages/JobDetails.jsx";
+import LandingPage from "./pages/LandingPage.jsx";
 
 export const routes = [
 	{ path: "signin", element: <SignIn /> },
+	{ path: "landing", element: <LandingPage /> },
 	{ path: "resume-preview", element: <ResumePreview /> },
 	{
 		path: "",
 		element: <Layout />,
 		children: [
-			{ index: true, element: <Dashboard /> },
+			{ index: true, element: <LandingPage /> },
 			{ path: "dashboard", element: <Dashboard /> },
 			{ path: "profile", element: <Profile /> },
+
 			{ path: "resume-builder", element: <ResumeBuilder /> },
 			{ path: "resume-analyzer", element: <ResumeAnalyzer /> },
 			{ path: "interview-prep", element: <InterviewPrep /> },
+			{ path: "interview-history", element: <InterviewHistory /> },
 			{ path: "career-explorer", element: <CareerExplorer /> },
-			{ path: "career-compass", element: <CareerCompass /> },
-			{ path: "strategies", element: <Strategies /> },
+			// { path: "career-compass", element: <CareerCompass /> },
+			// { path: "strategies", element: <Strategies /> },
 			{ path: "about-us", element: <AboutUs /> },
 			{ path: "job-details/:jobTitle", element: <JobDetails /> },
 		],

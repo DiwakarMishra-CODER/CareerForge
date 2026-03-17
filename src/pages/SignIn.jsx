@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 import { Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
-import nexaGenLogo from "../assets/logo.png"; // Ensure you have a logo image in the assets folder
+import careerForgeLogo from "../assets/logo.png"; // Ensure you have a logo image in the assets folder
 
 const GoogleIcon = () => (
   <svg
@@ -51,11 +51,11 @@ export default function SignIn() {
     setLoading(true);
     try {
       const data = await api.post('/api/auth/google', { idToken: response.credential });
-      
+
       // Save token and user info
-      localStorage.setItem('nexagen_token', data.token);
-      localStorage.setItem('nexagen_user', JSON.stringify(data));
-      localStorage.setItem('nexagen_user_id', data.userId);
+      localStorage.setItem('careerforge_token', data.token);
+      localStorage.setItem('careerforge_user', JSON.stringify(data));
+      localStorage.setItem('careerforge_user_id', data.userId);
 
       navigate("/dashboard");
     } catch (error) {
@@ -67,7 +67,7 @@ export default function SignIn() {
   }, [navigate]);
 
   useEffect(() => {
-    const token = localStorage.getItem('nexagen_token');
+    const token = localStorage.getItem('careerforge_token');
     if (token) {
       navigate("/dashboard");
       return;
@@ -88,23 +88,23 @@ export default function SignIn() {
 
   const handleEmailPasswordAuth = async (isSignUpFlow) => {
     if (!email || !password || (isSignUpFlow && (!firstName || !lastName))) {
-        alert("Please fill in all fields");
-        return;
+      alert("Please fill in all fields");
+      return;
     }
 
     setLoading(true);
     try {
       const endpoint = isSignUpFlow ? '/api/auth/register' : '/api/auth/login';
-      const body = isSignUpFlow 
+      const body = isSignUpFlow
         ? { email, password, firstName, lastName }
         : { email, password };
 
       const data = await api.post(endpoint, body);
-      
+
       // Save token and user info
-      localStorage.setItem('nexagen_token', data.token);
-      localStorage.setItem('nexagen_user', JSON.stringify(data));
-      localStorage.setItem('nexagen_user_id', data.userId);
+      localStorage.setItem('careerforge_token', data.token);
+      localStorage.setItem('careerforge_user', JSON.stringify(data));
+      localStorage.setItem('careerforge_user_id', data.userId);
 
       if (isSignUpFlow) {
         alert("Account created successfully!");
@@ -119,7 +119,7 @@ export default function SignIn() {
   };
 
   const handleGitHubSignIn = () => {
-      alert("GitHub login is coming soon. Please use Google or Email/Password for now.");
+    alert("GitHub login is coming soon. Please use Google or Email/Password for now.");
   };
 
   return (
@@ -134,8 +134,8 @@ export default function SignIn() {
         >
           <div className="w-96 h-96 flex items-center justify-center">
             <img
-              src={nexaGenLogo}
-              alt="NexaGen AI Logo"
+              src={careerForgeLogo}
+              alt="CareerForge Logo"
               className="w-full h-full object-contain"
             />
           </div>
@@ -226,8 +226,8 @@ export default function SignIn() {
                   ? "Creating account..."
                   : "Signing in..."
                 : isSignUp
-                ? "Create account"
-                : "Sign In"}
+                  ? "Create account"
+                  : "Sign In"}
             </button>
           </div>
 
@@ -242,7 +242,7 @@ export default function SignIn() {
 
           <div className="flex flex-col gap-4">
             <div id="googleSignInButton" className="w-full"></div>
-            
+
             <button
               onClick={handleGitHubSignIn}
               className="flex justify-center items-center py-3 px-4 border border-gray-700 rounded-lg text-white font-medium bg-gray-700/50 hover:bg-gray-700 transition-colors"

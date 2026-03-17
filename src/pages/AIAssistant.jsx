@@ -8,8 +8,8 @@ import BackgroundAnimation from "../components/UI/BackgroundAnimation.jsx";
 const faqs = {
   "Getting Started": [
     {
-      question: "What is NexaGen AI?",
-      answer: "NexaGen AI is your personal career assistant! We use AI to help you build resumes, analyze them against job descriptions, prepare for interviews, and create a personalized career roadmap to guide you to your dream job."
+      question: "What is CareerForge?",
+      answer: "CareerForge is your personal career assistant! We use AI to help you build resumes, analyze them against job descriptions, prepare for interviews, and create a personalized career roadmap to guide you to your dream job."
     },
     {
       question: "How do I build a resume?",
@@ -30,22 +30,22 @@ const faqs = {
       answer: <>The <Link to="/career-explorer" className="text-emerald-400 underline font-semibold">Career Explorer</Link> is a powerful tool that helps you discover different career paths. Select a field, and we'll generate a detailed roadmap with milestones and learning resources to guide you.</>
     },
     {
-        question: "How can I practice for interviews?",
-        answer: <>Head to our <Link to="/interview-prep" className="text-emerald-400 underline font-semibold">Interview Prep</Link> section. You can practice with an AI interviewer who will ask you relevant questions and provide feedback on your answers.</>
+      question: "How can I practice for interviews?",
+      answer: <>Head to our <Link to="/interview-prep" className="text-emerald-400 underline font-semibold">Interview Prep</Link> section. You can practice with an AI interviewer who will ask you relevant questions and provide feedback on your answers.</>
     },
-     {
-        question: "What are Career Strategies?",
-        answer: <>The <Link to="/strategies" className="text-emerald-400 underline font-semibold">Strategies</Link> page offers proven advice on topics like networking, personal branding, and productivity techniques to help you succeed in your career.</>
-    }
+    //      {
+    //         question: "What are Career Strategies?",
+    //         answer: <>The <Link to="/strategies" className="text-emerald-400 underline font-semibold">Strategies</Link> page offers proven advice on topics like networking, personal branding, and productivity techniques to help you succeed in your career.</>
+    //     }
   ],
   "Troubleshooting": [
     {
-        question: "Why is the page loading slowly?",
-        answer: "We use AI to generate personalized content, which can sometimes take a moment. We've optimized our pages to load essential content first, but if you continue to experience issues, please try refreshing the page."
+      question: "Why is the page loading slowly?",
+      answer: "We use AI to generate personalized content, which can sometimes take a moment. We've optimized our pages to load essential content first, but if you continue to experience issues, please try refreshing the page."
     },
     {
-        question: "How do I contact support?",
-        answer: "You can reach out to our team by using the 'Contact Us' form in the website footer. We're always happy to help!"
+      question: "How do I contact support?",
+      answer: "You can reach out to our team by using the 'Contact Us' form in the website footer. We're always happy to help!"
     }
   ]
 };
@@ -56,7 +56,7 @@ export default function AIAssistant() {
     {
       id: 1,
       type: "bot",
-      content: "Hello! I'm your NexaGen assistant. How can I help you today? Please select a topic below to see common questions.",
+      content: "Hello! I'm your CareerForge assistant. How can I help you today? Please select a topic below to see common questions.",
     },
   ]);
   const messagesEndRef = useRef(null);
@@ -89,7 +89,7 @@ export default function AIAssistant() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">AI Assistant</h1>
-            <p className="text-gray-400">Your guide to NexaGen AI's features.</p>
+            <p className="text-gray-400">Your guide to CareerForge's features.</p>
           </div>
         </div>
 
@@ -98,9 +98,8 @@ export default function AIAssistant() {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex gap-3 ${
-                  message.type === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex gap-3 ${message.type === "user" ? "justify-end" : "justify-start"
+                  }`}
               >
                 {message.type === "bot" && (
                   <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
@@ -108,11 +107,10 @@ export default function AIAssistant() {
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] rounded-xl p-3 shadow-md ${
-                    message.type === "user"
-                      ? "bg-emerald-500/20 border border-emerald-400/30 text-emerald-200"
-                      : "bg-gray-800 border border-gray-700 text-gray-300"
-                  }`}
+                  className={`max-w-[80%] rounded-xl p-3 shadow-md ${message.type === "user"
+                    ? "bg-emerald-500/20 border border-emerald-400/30 text-emerald-200"
+                    : "bg-gray-800 border border-gray-700 text-gray-300"
+                    }`}
                 >
                   <div className="text-sm leading-relaxed whitespace-pre-wrap">
                     {message.content}
@@ -135,16 +133,16 @@ export default function AIAssistant() {
               <div key={category}>
                 <h3 className="text-sm font-bold text-gray-400 mb-2">{category}</h3>
                 <div className="space-y-2">
-                    {questions.map((q) => (
-                        <button
-                            key={q.question}
-                            onClick={() => handlePromptClick(q.question, q.answer)}
-                            className="w-full text-left text-sm font-medium text-gray-300 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-2"
-                        >
-                           <ChevronsRight className="w-4 h-4 flex-shrink-0 text-emerald-400" />
-                           <span>{q.question}</span>
-                        </button>
-                    ))}
+                  {questions.map((q) => (
+                    <button
+                      key={q.question}
+                      onClick={() => handlePromptClick(q.question, q.answer)}
+                      className="w-full text-left text-sm font-medium text-gray-300 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-2"
+                    >
+                      <ChevronsRight className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+                      <span>{q.question}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             ))}

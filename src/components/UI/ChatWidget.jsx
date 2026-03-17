@@ -5,8 +5,8 @@ import { Bot, User as UserIcon, Sparkles, ChevronsRight, X } from "lucide-react"
 const faqs = {
   "Getting Started": [
     {
-      question: "What is NexaGen AI?",
-      answer: "NexaGen AI is your personal career assistant! We use AI to help you build resumes, analyze them against job descriptions, prepare for interviews, and create a personalized career roadmap to guide you to your dream job."
+      question: "What is CareerForge?",
+      answer: "CareerForge is your personal career assistant! We use AI to help you build resumes, analyze them against job descriptions, prepare for interviews, and create a personalized career roadmap to guide you to your dream job."
     },
     {
       question: "How do I build a resume?",
@@ -84,17 +84,17 @@ export default function ChatWidget({ onClose }) {
 
       <div className="p-4 border-t border-white/10 overflow-y-auto max-h-48">
         <div className="space-y-2">
-            {Object.entries(faqs).map(([category, questions]) => (
-                <div key={category}>
-                    <h3 className="text-xs font-bold text-gray-500 mb-2 uppercase">{category}</h3>
-                    {questions.map(q => (
-                        <button key={q.question} onClick={() => handlePromptClick(q.question, q.answer)} className="w-full text-left text-sm text-gray-300 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-2">
-                            <ChevronsRight className="w-4 h-4 flex-shrink-0 text-emerald-400" />
-                            <span>{q.question}</span>
-                        </button>
-                    ))}
-                </div>
-            ))}
+          {Object.entries(faqs).map(([category, questions]) => (
+            <div key={category}>
+              <h3 className="text-xs font-bold text-gray-500 mb-2 uppercase">{category}</h3>
+              {questions.map(q => (
+                <button key={q.question} onClick={() => handlePromptClick(q.question, q.answer)} className="w-full text-left text-sm text-gray-300 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-2">
+                  <ChevronsRight className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+                  <span>{q.question}</span>
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </div>

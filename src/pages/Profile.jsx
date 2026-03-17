@@ -158,15 +158,13 @@ const ProfileView = ({ formData, onEdit, completeness }) => {
         <InfoCard title="Education" icon={BookOpen}>
           <InfoItem
             label="Degree"
-            value={`${formData.education_degree || ""} in ${
-              formData.education_field || ""
-            }`}
+            value={`${formData.education_degree || ""} in ${formData.education_field || ""
+              }`}
           />
           <InfoItem
             label="University"
-            value={`${formData.education_university || ""} (${
-              formData.education_graduation_year || ""
-            })`}
+            value={`${formData.education_university || ""} (${formData.education_graduation_year || ""
+              })`}
           />
         </InfoCard>
         <InfoCard title="Skills & Certifications" icon={Star}>
@@ -267,9 +265,9 @@ const ProfileEditForm = ({
 
   const FormInput = React.forwardRef(({ id, ...props }, ref) => {
     const [localValue, setLocalValue] = useState(props.value);
-    
+
     useEffect(() => {
-        setLocalValue(props.value);
+      setLocalValue(props.value);
     }, [props.value]);
 
     const handleLocalChange = (e) => {
@@ -295,17 +293,17 @@ const ProfileEditForm = ({
 
   const FormTextarea = ({ id, ...props }) => {
     const [localValue, setLocalValue] = useState(props.value);
-    
+
     useEffect(() => {
-        setLocalValue(props.value);
+      setLocalValue(props.value);
     }, [props.value]);
 
     const handleLocalChange = (e) => {
-        setLocalValue(e.target.value);
+      setLocalValue(e.target.value);
     };
 
     const handleBlur = (e) => {
-        props.onChange(e);
+      props.onChange(e);
     };
 
     return (
@@ -443,12 +441,12 @@ const ProfileEditForm = ({
           </FormSelect>
         </FormItem>
         <FormItem label="Career Goals" id="career_goals">
-            <FormTextarea
-              id="career_goals"
-              value={formData.career_goals || ""}
-              onChange={handleInputChange}
-              rows="4"
-            />
+          <FormTextarea
+            id="career_goals"
+            value={formData.career_goals || ""}
+            onChange={handleInputChange}
+            rows="4"
+          />
         </FormItem>
         <FormItem
           label="Weekly Hours for Learning"
@@ -703,15 +701,15 @@ export default function Profile() {
     try {
       const formDataUpload = new FormData();
       formDataUpload.append('file', file);
-      
+
       const { url } = await api.upload('/api/upload/profile-picture', formDataUpload);
-      
+
       const updatedProfile = { ...formData, profile_picture_url: url };
       setFormData(updatedProfile);
-      
+
       const userId = getUserId();
       await api.post('/api/profiles', { ...updatedProfile, userId });
-      
+
       alert("Profile picture updated!");
       setOriginalData(updatedProfile);
     } catch (error) {
@@ -743,8 +741,9 @@ export default function Profile() {
           </p>
         </div>
       </div>
-      
+
       {/* Conditionally rendered note for Career Compass */}
+      {/* 
       {formData.experience_level !== 'entry' && (
         <div className="bg-purple-500/10 backdrop-blur-md rounded-xl border border-purple-400/20 p-4 flex items-start gap-4">
           <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -758,6 +757,7 @@ export default function Profile() {
           </div>
         </div>
       )}
+      */}
 
       {isEditing ? (
         <ProfileEditForm

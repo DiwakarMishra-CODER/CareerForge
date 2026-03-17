@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Mail, Send, X } from 'lucide-react';
-import nexaGenLogo from '../../assets/logo.png';
+import careerForgeLogo from '../../assets/logo.png';
 import { Link } from 'react-router-dom'
 
 // --- Easily Editable Social Links ---
 const socialLinks = {
-  email: "nexagen0@gmail.com"
+  email: "careerforge@gmail.com"
 };
 
 const ContactModal = ({ isOpen, onClose }) => {
@@ -42,8 +42,8 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
             <div className="flex flex-col items-center md:items-start">
               <div className="flex items-center gap-3">
-                <img src={nexaGenLogo} alt="NexaGen AI" className="w-10 h-10" />
-                <span className="text-xl font-bold">NexaGen AI</span>
+                <img src={careerForgeLogo} alt="CareerForge" className="w-10 h-10" />
+                <span className="text-xl font-bold">CareerForge</span>
               </div>
               <p className="mt-4 text-sm text-gray-400 text-center md:text-left">
                 Empowering your career journey with artificial intelligence.
@@ -71,7 +71,7 @@ export default function Footer() {
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-white/10 text-center text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} NexaGen AI. All rights reserved.
+            &copy; {new Date().getFullYear()} CareerForge. All rights reserved.
           </div>
         </div>
       </footer>

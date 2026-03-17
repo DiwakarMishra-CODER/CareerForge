@@ -5,20 +5,20 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 // Helper: get userId from localStorage (set during login)
 export const getUserId = () => {
-  const userStr = localStorage.getItem('nexagen_user');
+  const userStr = localStorage.getItem('careerforge_user');
   if (userStr) {
     try {
       const user = JSON.parse(userStr);
       return user.userId || user.id;
     } catch (e) {
-      return localStorage.getItem('nexagen_user_id') || 'demo_user';
+      return localStorage.getItem('careerforge_user_id') || 'demo_user';
     }
   }
-  return localStorage.getItem('nexagen_user_id') || 'demo_user';
+  return localStorage.getItem('careerforge_user_id') || 'demo_user';
 };
 
 // Helper: get token from localStorage
-export const getToken = () => localStorage.getItem('nexagen_token');
+export const getToken = () => localStorage.getItem('careerforge_token');
 
 // API wrapper
 export const api = {
@@ -31,8 +31,8 @@ export const api = {
 
     const response = await fetch(`${BASE_URL}${path}`, { headers });
     if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || 'API request failed');
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'API request failed');
     }
     return response.json();
   },
@@ -49,8 +49,8 @@ export const api = {
       body: JSON.stringify(body),
     });
     if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || 'API request failed');
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'API request failed');
     }
     return response.json();
   },
@@ -67,8 +67,8 @@ export const api = {
       body: JSON.stringify(body),
     });
     if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || 'API request failed');
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'API request failed');
     }
     return response.json();
   },
@@ -84,8 +84,8 @@ export const api = {
       headers,
     });
     if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || 'API request failed');
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'API request failed');
     }
     return response.json();
   },
@@ -100,8 +100,8 @@ export const api = {
       body: formData, // fetch automatically sets multipart/form-data with boundary
     });
     if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || 'Upload failed');
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Upload failed');
     }
     return response.json();
   }

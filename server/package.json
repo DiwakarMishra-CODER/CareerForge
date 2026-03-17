@@ -1,13 +1,14 @@
 {
-  "name": "nexagen-server",
+  "name": "careerforge-server",
   "version": "1.0.0",
-  "description": "NexaGen Express + MongoDB backend",
+  "description": "CareerForge Express + MongoDB backend",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
   "dependencies": {
+    "axios": "^1.13.6",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
     "cors": "^2.8.5",
@@ -17,6 +18,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.3.4",
     "multer": "^1.4.5-lts.1",
+    "pdf-parse": "^2.4.5",
     "streamifier": "^0.1.1"
   },
   "devDependencies": {

@@ -22,7 +22,7 @@ router.post('/profile-picture', upload.single('file'), async (req, res) => {
     const streamUpload = (buffer) =>
       new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: 'nexagen_profiles', resource_type: 'image' },
+          { folder: 'careerforge_profiles', resource_type: 'image' },
           (error, result) => {
             if (result) resolve(result);
             else reject(error);

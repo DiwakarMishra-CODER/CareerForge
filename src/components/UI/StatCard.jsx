@@ -1,5 +1,5 @@
-import React from 'react';
 import { FileText, Map, Brain, Award } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const icons = {
     FileText,
@@ -8,7 +8,7 @@ const icons = {
     Award
 };
 
-export default function StatCard({ icon, label, value, color }) {
+export default function StatCard({ icon, label, value, color, link }) {
     const colorClasses = {
         emerald: "text-emerald-300",
         blue: "text-blue-300",
@@ -23,7 +23,7 @@ export default function StatCard({ icon, label, value, color }) {
     }
     const IconComponent = icons[icon];
 
-    return (
+    const CardContent = (
         <div className={`bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-xl shadow-lg transition-all duration-300 hover:bg-white/10 hover:-translate-y-1 ${hoverGlowClasses[color]}`}>
             <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
@@ -36,4 +36,10 @@ export default function StatCard({ icon, label, value, color }) {
             </div>
         </div>
     );
+
+    if (link) {
+        return <Link to={link}>{CardContent}</Link>;
+    }
+
+    return CardContent;
 }

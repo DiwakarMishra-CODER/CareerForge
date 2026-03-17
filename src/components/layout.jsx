@@ -15,9 +15,13 @@ import {
   Mic,
   Lightbulb,
   X,
-  Compass
+  Compass,
+  Bell,
+  Sparkles,
+  Users,
+  HelpCircle
 } from "lucide-react";
-import nexaGenLogo from "../assets/logo.png";
+import careerForgeLogo from "../assets/logo.png";
 import BackgroundAnimation from "./UI/BackgroundAnimation.jsx";
 import ChatWidget from "./UI/ChatWidget.jsx";
 
@@ -93,8 +97,15 @@ export default function Layout() {
       setIsLoading(true);
       try {
         const token = getToken();
-        if (!token) {
+        const isLandingPath = location.pathname === "/" || location.pathname === "/landing";
+
+        if (!token && !isLandingPath) {
           navigate("/signin");
+          return;
+        }
+
+        if (token && isLandingPath) {
+          navigate("/dashboard");
           return;
         }
 
@@ -102,15 +113,17 @@ export default function Layout() {
         try {
           const userData = await api.get('/api/auth/me');
           setUser(userData);
-          
+
           // Fetch profile
           const profileData = await api.get(`/api/profiles/${userData._id}`);
           setProfile(profileData);
         } catch (err) {
           console.error("Auth initialization failed:", err);
-          localStorage.removeItem("nexagen_token");
-          localStorage.removeItem("nexagen_user");
-          navigate("/signin");
+          localStorage.removeItem("careerforge_token");
+          localStorage.removeItem("careerforge_user");
+          if (!isLandingPath) {
+            navigate("/signin");
+          }
         }
       } catch (error) {
         console.error("Layout initialization error:", error);
@@ -123,145 +136,199 @@ export default function Layout() {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("nexagen_token");
-    localStorage.removeItem("nexagen_user");
-    localStorage.removeItem("nexagen_user_id");
-    navigate("/signin");
+    localStorage.removeItem("careerforge_token");
+    localStorage.removeItem("careerforge_user");
+    localStorage.removeItem("careerforge_user_id");
+    navigate("/");
   };
 
-  const isStudent = profile?.experience_level === 'entry';
+  // const isStudent = profile?.experience_level === 'entry';
 
-  const navigationItems = [
-    { title: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-    isStudent && { title: "Career Compass", to: "/career-compass", icon: Compass },
-    { title: "Resume Builder", to: "/resume-builder", icon: FileText },
-    { title: "Resume Analyzer", to: "/resume-analyzer", icon: Search },
-    { title: "Interview Prep", to: "/interview-prep", icon: Mic },
-    { title: "Career Explorer", to: "/career-explorer", icon: Map },
-    { title: "Strategies", to: "/strategies", icon: Lightbulb },
-    { title: "About Us", to: "/about-us", icon: Info },
-  ].filter(Boolean);
+  const isLandingPage = location.pathname === "/" || location.pathname === "/landing";
+
+  const navigationItems = isLandingPage
+    ? [
+      { title: "Ecosystem", to: "#ecosystem", icon: Sparkles },
+      { title: "About", to: "#team", icon: Info },
+      { title: "FAQ", to: "#faq", icon: HelpCircle },
+    ]
+    : [
+      { title: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
+      { title: "Resume Builder", to: "/resume-builder", icon: FileText },
+      { title: "Resume Analyzer", to: "/resume-analyzer", icon: Search },
+      { title: "Interview", to: "/interview-prep", icon: Mic },
+      { title: "Career", to: "/career-explorer", icon: Map },
+    ];
 
 
-  const gridBackgroundStyle = {
-    backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px)',
-    backgroundSize: '2rem 2rem',
-  };
+
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
       </div>
     );
   }
-  
+
   const avatarUrl = profile?.profile_picture_url;
   const displayName = profile?.full_name || user?.firstName || "User";
 
   return (
-    <div className="h-screen bg-gray-950 text-white flex flex-col">
+    <div className="h-screen bg-gray-950 text-white flex flex-col relative overflow-hidden">
       <BackgroundAnimation />
-      <header className="sticky top-0 z-40 w-full h-20 flex items-center justify-between px-6 bg-gray-900/80 backdrop-blur-lg border-b border-white/10">
-        <div className="flex items-center gap-6">
-          <Link to="/dashboard" className="flex items-center gap-3">
-            <div className="w-12 h-12 flex items-center justify-center">
-              <img
-                src={nexaGenLogo}
-                alt="NexaGen AI Logo"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <h1 className="text-2xl font-bold text-white hidden sm:block">
-              NexaGen AI
-            </h1>
-          </Link>
-          <nav className="hidden lg:flex items-center gap-4">
+
+      {/* 3D Floating Navbar Container with Opaque Backdrop for Scroll */}
+      <div className="fixed top-0 left-0 right-0 h-20 bg-gray-950/80 backdrop-blur-md z-50 pointer-events-none"></div>
+
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-7xl px-4 pointer-events-none text-center">
+        <header className="inline-flex pointer-events-auto h-14 bg-gray-950 border border-white/10 rounded-2xl items-center gap-8 lg:gap-16 px-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:border-white/20 group/nav mx-auto">
+
+          <div className="flex items-center justify-start relative z-10">
+            <Link to={isLandingPage ? "#" : "/dashboard"} className={`flex items-center gap-3 active:scale-95 transition-transform group/logo ${isLandingPage ? 'cursor-default pointer-events-none' : ''}`}>
+              <div className="w-8 h-8 flex items-center justify-center p-1 bg-white/5 rounded-xl border border-white/10 shadow-inner group-hover/logo:rotate-3 transition-transform">
+                <img
+                  src={careerForgeLogo}
+                  alt="CareerForge Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <h1 className="text-xl font-black text-white hidden sm:block tracking-tighter uppercase italic">
+                Career<span className="text-blue-400">Forge</span>
+              </h1>
+            </Link>
+          </div>
+
+          <nav className="hidden lg:flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-2xl relative z-10">
             {navigationItems.map((item) => (
-              <NavLink
-                key={item.title}
-                to={item.to}
-                className={({ isActive }) =>
-                  `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-emerald-500/20 text-emerald-300"
-                      : "text-gray-300 hover:bg-white/10 hover:text-white"
-                  }`
-                }
-              >
-                {item.title}
-              </NavLink>
+              item.to.startsWith('#') ? (
+                <a
+                  key={item.title}
+                  href={item.to}
+                  className="px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 text-gray-400 hover:text-white hover:bg-white/5"
+                >
+                  {item.title}
+                </a>
+              ) : (
+                <NavLink
+                  key={item.title}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 relative group/link ${isActive
+                      ? "text-blue-300 bg-blue-500/20 shadow-[inset_0_2px_10px_rgba(59,130,246,0.1)] active-3d"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                    }`
+                  }
+                >
+                  {item.title}
+                </NavLink>
+              )
             ))}
           </nav>
-        </div>
 
-        <div className="flex items-center gap-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-white/20 cursor-pointer bg-gray-800">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-emerald-900 flex items-center justify-center text-emerald-300 font-bold">
-                    {displayName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => navigate("/profile")}>
-                <UserIcon className="mr-2 h-4 w-4" /> Profile
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" /> Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
-          <button
-            className="text-gray-200 lg:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-        </div>
-      </header>
+          <div className="flex items-center justify-end gap-6 relative z-10">
+            {!isLandingPage && (
+              <>
+                <button className="relative p-1.5 text-gray-400 hover:text-white transition-colors group/bell">
+                  <Bell className="w-4 h-4" />
+                  <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-500 rounded-full border-2 border-gray-950 group-hover:scale-110 transition-transform"></span>
+                </button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <div className="h-8 w-8 rounded-xl overflow-hidden border border-white/10 cursor-pointer bg-gray-800 shadow-[0_4px_10px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform active:scale-95">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-900 flex items-center justify-center text-white font-black text-sm">
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <div className="p-2">
+                      <DropdownMenuLabel className="p-0 text-[10px] uppercase tracking-tighter opacity-50">{user?.email}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => navigate("/profile")}>
+                        <UserIcon className="mr-2 h-4 w-4 text-emerald-400" /> Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4 text-rose-400" /> Log out
+                      </DropdownMenuItem>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+
+            {isLandingPage && (
+              <Link to="/signin">
+                <button className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
+                  Join Us
+                </button>
+              </Link>
+            )}
+
+
+            <button
+              className="text-gray-200 lg:hidden p-2 hover:bg-white/5 rounded-xl transition-colors"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
+        </header>
+      </div>
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .active-3d {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+      `}} />
 
       {isMobileMenuOpen && (
-        <nav className="fixed top-20 left-0 w-full h-[calc(100vh-5rem)] bg-gray-950/95 backdrop-blur-xl p-6 space-y-2 lg:hidden z-30">
+        <nav className="fixed inset-0 z-[60] bg-gray-950/90 backdrop-blur-2xl p-8 flex flex-col gap-4 animate-in fade-in duration-300">
+          <div className="flex justify-between items-center mb-10">
+            <h2 className="text-xl font-black uppercase tracking-tighter">Menu</h2>
+            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-white">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
           {navigationItems.map((item) => (
             <NavLink
               key={item.title}
               to={item.to}
               onClick={() => setIsMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-4 px-4 py-3 rounded-lg font-medium text-base transition-colors ${
-                  isActive
-                    ? "bg-emerald-500/20 text-emerald-300"
-                    : "text-gray-300 hover:bg-white/10 hover:text-white"
+                `flex items-center gap-6 px-6 py-5 rounded-[2rem] font-bold italic text-lg transition-all ${isActive
+                  ? "bg-blue-500/20 text-blue-300 border border-blue-500/30 shadow-[0_10px_30px_rgba(59,130,246,0.2)]"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
                 }`
               }
             >
-              <item.icon className="w-6 h-6" />
+              <item.icon className="w-7 h-7" />
               {item.title}
             </NavLink>
           ))}
         </nav>
       )}
-      
-      <main className="flex-1 overflow-y-auto relative" style={gridBackgroundStyle}>
+
+      <main className="flex-1 overflow-y-auto relative pt-24">
         <Outlet context={{ user, profile }} />
-        
+
         <button
           onClick={() => setIsChatOpen(!isChatOpen)}
-          className="fixed bottom-8 right-8 z-40 w-16 h-16 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300"
+          className="fixed bottom-8 right-8 z-40 w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300"
           title="AI Career Assistant"
         >
           {isChatOpen ? <X className="w-8 h-8 text-white" /> : <MessageSquare className="w-8 h-8 text-white" />}

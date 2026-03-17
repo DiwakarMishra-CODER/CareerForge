@@ -1,81 +1,161 @@
 import React from 'react';
-import { Target, Lightbulb, Heart } from 'lucide-react';
-import nexaGenLogo from '../assets/logo.png'; 
+import { Target, Lightbulb, Heart, Rocket, Users, Shield } from 'lucide-react';
+import careerForgeLogo from '../assets/logo.png';
+import ThreeBackground from '../components/UI/ThreeBackground'; // ensure you have this file
 
-// Import team member images
-import ishanImage from '../assets/Ishan.png'; // Assuming ishan.png is Image 3
-import kshitijImage from '../assets/Kshitij.png'; // Assuming kshitij.png is Image 1
-import rahulImage from '../assets/Rahul.png'; // Assuming rahul.png is Image 2
-import diwakarImage from '../assets/Diwakar.png'; // Assuming diwakar.png is Image 4
-
+// Import team member images (Using URL for Ishan)
+const ishanImage = "https://i.postimg.cc/x8Kb5SDj/Whats-App-Image-2026-03-02-at-10-51-00.jpg";
+import kshitijImage from '../assets/Kshitij.png';
+import rahulImage from '../assets/Rahul.png';
+import diwakarImage from '../assets/Diwakar.png';
 
 const teamMembers = [
-  { name: "Ishan Gupta",image: ishanImage }, // Changed to Image 3
-  { name: "Kshitij Garg", image: kshitijImage }, // Changed to Image 1
-  { name: "Rahul Kumar", image: rahulImage }, // Changed to Image 2
-  { name: "Diwakar Mishra", image: diwakarImage } // Changed to Image 4
+    { name: "Ishan Gupta", role: "Frontend Developer", image: ishanImage },
+    { name: "Kshitij Garg", role: "Backend Developer", image: kshitijImage },
+    { name: "Rahul Kumar", role: "UI/UX Designer", image: rahulImage },
+    { name: "Diwakar Mishra", role: "AI Engineer", image: diwakarImage }
+];
+
+const features = [
+    {
+        icon: Rocket,
+        title: "AI-Powered Roadmaps",
+        description: "Experience dynamic progression paths curated specifically for your strengths and career goals.",
+        color: "text-blue-400",
+        bg: "bg-blue-500/10"
+    },
+    {
+        icon: Users,
+        title: "Community Driven",
+        description: "Join thousands of learners in collaborative environments, sharing insights and growth hacking.",
+        color: "text-purple-400",
+        bg: "bg-purple-500/10"
+    },
+    {
+        icon: Shield,
+        title: "Enterprise Grade",
+        description: "Built on robust architecture matching industry standards for privacy, speed, and real-time inference.",
+        color: "text-emerald-400",
+        bg: "bg-emerald-500/10"
+    }
 ];
 
 export default function AboutUs() {
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-12 text-white">
-            <div className="text-center space-y-6">
-                <div className="flex justify-center">
-                    <div className="w-20 h-20 flex items-center justify-center">
-                        <img src={nexaGenLogo} alt="NexaGen AI Logo" className="w-full h-full object-contain" />
+        <div className="relative min-h-screen text-white overflow-hidden bg-[#030014]">
+            {/* 3D Moving Background */}
+            <ThreeBackground />
+
+            {/* Overlay Grid & Ambient Glow */}
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAzNHYtbjAwbTAtNDAwaDM2aC0zNnoiIHN0cm9rZT0iIzFmMjkzNyIgc3Ryb2tlLW9wYWNpdHk9IjAuNSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9nPjwvc3ZnPg==')] opacity-20 pointer-events-none" />
+            <div className="absolute top-1/4 -left-64 w-96 h-96 bg-purple-500/30 rounded-full blur-[128px] pointer-events-none" />
+            <div className="absolute bottom-1/4 -right-64 w-96 h-96 bg-blue-500/30 rounded-full blur-[128px] pointer-events-none" />
+
+            {/* Content Container */}
+            <div className="relative z-10 p-6 lg:p-12 max-w-7xl mx-auto space-y-20 pt-20">
+
+                {/* Hero Section */}
+                <div className="text-center space-y-8 animate-fade-in-up">
+                    <div className="flex justify-center mb-6">
+                        <div className="w-28 h-28 relative group">
+                            <div className="absolute inset-0 bg-emerald-500 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500" />
+                            <img src={careerForgeLogo} alt="CareerForge Logo" className="relative w-full h-full object-contain filter drop-shadow-2xl" />
+                        </div>
+                    </div>
+                    <div>
+                        <h1 className="text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 mb-6 drop-shadow-md pb-2 tracking-tight">
+                            Forging Futures
+                        </h1>
+                        <p className="text-lg text-gray-300 max-w-2xl mx-auto leading-loose font-light">
+                            Welcome to <strong className="text-white">CareerForge</strong>. We're revolutionizing professional growth through deep artificial intelligence, empowering the next generation of pioneers to chart paths unseen.
+                        </p>
                     </div>
                 </div>
-                <div>
-                    <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">About NexaGen AI</h1>
-                    <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-                        Empowering students with AI-driven career guidance and personalized learning paths.
-                    </p>
-                </div>
-            </div>
 
-            <div className="text-center p-8 bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 rounded-lg shadow-lg">
-                <Target className="w-8 h-8 mx-auto mb-4" />
-                <h2 className="text-3xl font-bold">Our Mission</h2>
-                <p className="text-lg mt-2 max-w-4xl mx-auto text-gray-200">
-                    Our project, “NexaGen AI”, is designed to empower students by providing a personalized roadmap for their future careers. The platform analyzes resumes, evaluates skills, and recommends suitable career paths while offering curated learning resources.
-                </p>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-lg space-y-4">
-                    <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center"><Lightbulb className="w-6 h-6 text-orange-400" /></div>
-                    <h3 className="text-2xl font-bold text-white">The Challenge</h3>
-                    <p className="text-gray-300 leading-relaxed">In today’s fast-evolving job market, students often struggle to identify the right skills and opportunities. Our solution bridges this gap by combining AI-driven insights, career guidance, and continuous learning support, preparing learners to stay ahead in their professional journey.</p>
-                </div>
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-lg space-y-4">
-                    <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center"><Heart className="w-6 h-6 text-green-400" /></div>
-                    <h3 className="text-2xl font-bold text-white">Our Vision</h3>
-                    <p className="text-gray-300 leading-relaxed">We believe technology can democratize career guidance and make it accessible to everyone, helping students build confidence and clarity about their future. We are committed to creating a platform that truly understands and supports each learner's unique journey.</p>
-                </div>
-            </div>
-
-            <div className="text-center">
-                <h2 className="text-3xl font-bold text-white">Meet Our Team</h2>
-                <p className="text-gray-400 mt-2">The passionate innovators from Maharaja Agrasen Institute of Technology behind NexaGen AI.</p>
-                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-                    {teamMembers.map((member) => (
-                        <div key={member.name} className="text-center space-y-3 flex flex-col items-center">
-                            <div className="w-28 h-28 mx-auto bg-gray-800 border border-white/10 rounded-full flex items-center justify-center overflow-hidden">
-                                {member.image ? (
-                                    <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-purple-400 to-pink-400">
-                                        {member.name.split(' ').map(n => n[0]).join('')}
-                                    </span>
-                                )}
+                {/* Features Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-10">
+                    {features.map((feature, idx) => (
+                        <div key={idx} className="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-2xl hover:bg-white/10 transition-all duration-300 group hover:-translate-y-2">
+                            <div className={`w-12 h-12 ${feature.bg} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                                <feature.icon className={`w-6 h-6 ${feature.color}`} />
                             </div>
-                            <div>
-                                <h4 className="font-bold text-white">{member.name}</h4>
-                                <p className="text-sm text-purple-400 font-medium">{member.role}</p>
-                            </div>
+                            <h3 className="text-xl font-bold text-white mb-4">{feature.title}</h3>
+                            <p className="text-base text-gray-400 leading-loose font-light">{feature.description}</p>
                         </div>
                     ))}
                 </div>
+
+                {/* Split Vision Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-10">
+                    <div className="space-y-6">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold tracking-wide">
+                            <Target className="w-4 h-4" /> OUR MISSION
+                        </div>
+                        <h2 className="text-3xl lg:text-4xl font-bold text-white leading-tight tracking-tight">
+                            Democratizing elite <br /> career guidance.
+                        </h2>
+                        <p className="text-gray-400 text-base leading-loose font-light">
+                            The gap between ambition and opportunity is widening. Traditional career advice is static and outdated. Our platform analyzes your unique skillset, dynamically compares it against real-time market demands, and constructs an evolving blueprint for success.
+                        </p>
+                        <ul className="space-y-4 pt-4">
+                            {[
+                                "Real-time market analytics",
+                                "Iterative resume refinement",
+                                "AI-driven mock interviews"
+                            ].map((item, i) => (
+                                <li key={i} className="flex items-center gap-3 text-gray-300">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-purple-500 to-blue-500 rounded-3xl blur-2xl opacity-20" />
+                        <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-3xl space-y-6 shadow-2xl">
+                            <Heart className="w-10 h-10 text-pink-500 mb-4" />
+                            <h3 className="text-xl font-bold text-white mb-2">Built with empathy.</h3>
+                            <p className="text-base text-gray-400 leading-loose font-light">
+                                We know the job hunt is daunting. That’s why CareerForge is designed to be your steadfast companion. We celebrate your milestones, identify your blind spots without judgment, and provide actionable resources precisely when you need them.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Team Section */}
+                <div className="text-center pt-10">
+                    <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">Meet The Architects</h2>
+                    <p className="text-base text-gray-400 mb-20 max-w-2xl mx-auto font-light leading-loose">
+                        The passionate innovators from Maharaja Agrasen Institute of Technology pioneering the future of talent.
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+                        {teamMembers.map((member) => (
+                            <div key={member.name} className="group relative">
+                                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                <div className="w-40 h-40 mx-auto overflow-hidden rounded-full bg-gray-900 border-2 border-emerald-500/30 relative mt-6 shadow-xl">
+                                    {member.image ? (
+                                        <img
+                                            src={member.image}
+                                            alt={member.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                                            <span className="text-5xl font-bold text-gray-600">
+                                                {member.name.split(' ').map(n => n[0]).join('')}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-6 mb-6">
+                                    <h4 className="font-bold text-xl text-white tracking-wide">{member.name}</h4>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
             </div>
         </div>
     );
