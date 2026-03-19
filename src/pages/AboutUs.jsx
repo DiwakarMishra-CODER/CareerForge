@@ -59,7 +59,7 @@ export default function AboutUs() {
                     <div className="flex justify-center mb-6">
                         <div className="w-28 h-28 relative group">
                             <div className="absolute inset-0 bg-emerald-500 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500" />
-                            <img src={careerForgeLogo} alt="CareerForge Logo" className="relative w-full h-full object-contain filter drop-shadow-2xl" />
+                            <img src={careerForgeLogo} alt="CareerSaarthi Logo" className="relative w-full h-full object-contain filter drop-shadow-2xl" />
                         </div>
                     </div>
                     <div>
@@ -67,7 +67,7 @@ export default function AboutUs() {
                             Forging Futures
                         </h1>
                         <p className="text-lg text-gray-300 max-w-2xl mx-auto leading-loose font-light">
-                            Welcome to <strong className="text-white">CareerForge</strong>. We're revolutionizing professional growth through deep artificial intelligence, empowering the next generation of pioneers to chart paths unseen.
+                            Welcome to <strong className="text-white">CareerSaarthi</strong>. We're revolutionizing professional growth through deep artificial intelligence, empowering the next generation of pioneers to chart paths unseen.
                         </p>
                     </div>
                 </div>
@@ -116,7 +116,7 @@ export default function AboutUs() {
                             <Heart className="w-10 h-10 text-pink-500 mb-4" />
                             <h3 className="text-xl font-bold text-white mb-2">Built with empathy.</h3>
                             <p className="text-base text-gray-400 leading-loose font-light">
-                                We know the job hunt is daunting. That’s why CareerForge is designed to be your steadfast companion. We celebrate your milestones, identify your blind spots without judgment, and provide actionable resources precisely when you need them.
+                                We know the job hunt is daunting. That’s why CareerSaarthi is designed to be your steadfast companion. We celebrate your milestones, identify your blind spots without judgment, and provide actionable resources precisely when you need them.
                             </p>
                         </div>
                     </div>

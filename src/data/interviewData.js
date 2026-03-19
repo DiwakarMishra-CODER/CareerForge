@@ -55,8 +55,8 @@ export const FALLBACK_QUESTIONS = {
     ]
 };
 
-// CareerForge resource mapping (adapted from Adhyaya)
-export const CAREERFORGE_RESOURCES = {
+// CareerSaarthi resource mapping (adapted from Adhyaya)
+export const CAREERSAARTHI_RESOURCES = {
     // DSA Patterns
     'sliding_window': {
         title: 'Sliding Window Pattern',
@@ -138,9 +138,9 @@ export function mapWeakAreasToResources(weakTopics = []) {
         const normalizedTopic = topic.toLowerCase().replace(/[^a-z0-9]/g, '_');
         let found = false;
 
-        if (CAREERFORGE_RESOURCES[normalizedTopic]) {
+        if (CAREERSAARTHI_RESOURCES[normalizedTopic]) {
             resources.push({
-                ...CAREERFORGE_RESOURCES[normalizedTopic],
+                ...CAREERSAARTHI_RESOURCES[normalizedTopic],
                 originalTopic: topic,
                 hasPath: true
             });
@@ -173,7 +173,7 @@ export function getRandomFallbackQuestion(interviewType, usedQuestions = []) {
 
 export default {
     FALLBACK_QUESTIONS,
-    CAREERFORGE_RESOURCES,
+    CAREERSAARTHI_RESOURCES,
     mapWeakAreasToResources,
     getRandomFallbackQuestion
 };

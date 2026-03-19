@@ -95,7 +95,7 @@ export default function MockInterview() {
             <InterviewBackground />
 
             {step === 'selection' && (
-                <main className="max-w-7xl mx-auto py-16 px-6 relative z-10">
+                <main className="max-w-7xl mx-auto px-6 relative z-10 pt-36 pb-16">
                     <div className="text-center mb-12 animate-in fade-in slide-in-from-top-10 duration-1000">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-6">
                             <Sparkles className="w-3.5 h-3.5" />

@@ -272,7 +272,7 @@ export default function ResumeAnalyzer() {
       <AnalyzerBackground />
 
       {/* Scrollable Container */}
-      <div className="relative z-10 p-4 sm:p-6 lg:p-12 max-w-6xl mx-auto space-y-12">
+      <div className="relative z-10 p-4 sm:p-6 lg:px-12 lg:pb-12 pt-[152px] lg:pt-[152px] max-w-6xl mx-auto space-y-12">
         <header className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.4)] rotate-3">
@@ -280,7 +280,7 @@ export default function ResumeAnalyzer() {
             </div>
             <div>
               <h1 className="text-4xl lg:text-5xl font-black italic tracking-tighter uppercase leading-none">
-                Resume <span className="text-blue-500">Lens</span>
+                Resume <span className="text-blue-500">Analyzer</span>
               </h1>
               <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-2">
                 Advanced ATS & Job Matching Engine

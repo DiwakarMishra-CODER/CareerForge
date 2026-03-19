@@ -479,7 +479,7 @@ export default function CareerExplorer() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:px-8 lg:pb-8 pt-[152px] lg:pt-[152px] max-w-7xl mx-auto space-y-8">
        <div 
         aria-live="assertive" 
         className={`fixed top-24 right-8 z-50 bg-emerald-600 text-white font-bold px-6 py-3 rounded-lg shadow-2xl transition-all duration-300 ease-out

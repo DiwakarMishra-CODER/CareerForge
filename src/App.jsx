@@ -15,6 +15,8 @@ import InterviewHistory from "./pages/InterviewHistory.jsx";
 // import CareerCompass from "./pages/CareerCompass.jsx";
 import JobDetails from "./pages/JobDetails.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
+import LinkedInOptimizer from "./pages/LinkedInOptimizer.jsx";
+import JobExplorer from "./pages/JobExplorer.jsx";
 
 export const routes = [
 	{ path: "signin", element: <SignIn /> },
@@ -37,6 +39,8 @@ export const routes = [
 			// { path: "strategies", element: <Strategies /> },
 			{ path: "about-us", element: <AboutUs /> },
 			{ path: "job-details/:jobTitle", element: <JobDetails /> },
+			{ path: "linkedin-optimizer", element: <LinkedInOptimizer /> },
+			{ path: "job-explorer", element: <JobExplorer /> },
 		],
 	},
 ];

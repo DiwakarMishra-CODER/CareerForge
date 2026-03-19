@@ -42,8 +42,8 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
             <div className="flex flex-col items-center md:items-start">
               <div className="flex items-center gap-3">
-                <img src={careerForgeLogo} alt="CareerForge" className="w-10 h-10" />
-                <span className="text-xl font-bold">CareerForge</span>
+                <img src={careerForgeLogo} alt="CareerSaarthi" className="w-10 h-10" />
+                <span className="text-xl font-bold">CareerSaarthi</span>
               </div>
               <p className="mt-4 text-sm text-gray-400 text-center md:text-left">
                 Empowering your career journey with artificial intelligence.
@@ -71,7 +71,7 @@ export default function Footer() {
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-white/10 text-center text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} CareerForge. All rights reserved.
+            &copy; {new Date().getFullYear()} CareerSaarthi. All rights reserved.
           </div>
         </div>
       </footer>

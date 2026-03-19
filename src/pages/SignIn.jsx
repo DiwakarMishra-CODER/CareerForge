@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 import { Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
-import careerForgeLogo from "../assets/logo.png"; // Ensure you have a logo image in the assets folder
+import careerSaarthiLogo from "../assets/logo.png"; // Ensure you have a logo image in the assets folder
 
 const GoogleIcon = () => (
   <svg
@@ -53,10 +53,9 @@ export default function SignIn() {
       const data = await api.post('/api/auth/google', { idToken: response.credential });
 
       // Save token and user info
-      localStorage.setItem('careerforge_token', data.token);
-      localStorage.setItem('careerforge_user', JSON.stringify(data));
-      localStorage.setItem('careerforge_user_id', data.userId);
-
+      localStorage.setItem('careersaarthi_token', data.token);
+      localStorage.setItem('careersaarthi_user', JSON.stringify(data));
+      localStorage.setItem('careersaarthi_user_id', data.userId);
       navigate("/dashboard");
     } catch (error) {
       console.error("Google Auth error:", error);
@@ -67,7 +66,7 @@ export default function SignIn() {
   }, [navigate]);
 
   useEffect(() => {
-    const token = localStorage.getItem('careerforge_token');
+    const token = localStorage.getItem('careersaarthi_token');
     if (token) {
       navigate("/dashboard");
       return;
@@ -102,9 +101,9 @@ export default function SignIn() {
       const data = await api.post(endpoint, body);
 
       // Save token and user info
-      localStorage.setItem('careerforge_token', data.token);
-      localStorage.setItem('careerforge_user', JSON.stringify(data));
-      localStorage.setItem('careerforge_user_id', data.userId);
+      localStorage.setItem('careersaarthi_token', data.token);
+      localStorage.setItem('careersaarthi_user', JSON.stringify(data));
+      localStorage.setItem('careersaarthi_user_id', data.userId);
 
       if (isSignUpFlow) {
         alert("Account created successfully!");
@@ -134,8 +133,8 @@ export default function SignIn() {
         >
           <div className="w-96 h-96 flex items-center justify-center">
             <img
-              src={careerForgeLogo}
-              alt="CareerForge Logo"
+              src={careerSaarthiLogo}
+              alt="CareerSaarthi Logo"
               className="w-full h-full object-contain"
             />
           </div>

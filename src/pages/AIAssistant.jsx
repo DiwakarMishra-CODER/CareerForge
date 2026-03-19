@@ -8,8 +8,8 @@ import BackgroundAnimation from "../components/UI/BackgroundAnimation.jsx";
 const faqs = {
   "Getting Started": [
     {
-      question: "What is CareerForge?",
-      answer: "CareerForge is your personal career assistant! We use AI to help you build resumes, analyze them against job descriptions, prepare for interviews, and create a personalized career roadmap to guide you to your dream job."
+      question: "What is CareerSaarthi?",
+      answer: "CareerSaarthi is your personal career assistant! We use AI to help you build resumes, analyze them against job descriptions, prepare for interviews, and create a personalized career roadmap to guide you to your dream job."
     },
     {
       question: "How do I build a resume?",
@@ -56,7 +56,7 @@ export default function AIAssistant() {
     {
       id: 1,
       type: "bot",
-      content: "Hello! I'm your CareerForge assistant. How can I help you today? Please select a topic below to see common questions.",
+      content: "Hello! I'm your CareerSaarthi assistant. How can I help you today? Please select a topic below to see common questions.",
     },
   ]);
   const messagesEndRef = useRef(null);
@@ -89,7 +89,7 @@ export default function AIAssistant() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">AI Assistant</h1>
-            <p className="text-gray-400">Your guide to CareerForge's features.</p>
+            <p className="text-gray-400">Your guide to CareerSaarthi's features.</p>
           </div>
         </div>
 

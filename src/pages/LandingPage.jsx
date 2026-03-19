@@ -514,7 +514,7 @@ const LandingPage = () => {
                     <div className="flex whitespace-nowrap marquee-wrapper">
                         <div className="flex gap-10 marquee-content py-4">
                             {[
-                                { name: "Arjun Mehta", comment: "CareerForge changed my resume game completely!" },
+                                { name: "Arjun Mehta", comment: "CareerSaarthi changed my resume game completely!" },
                                 { name: "Priya Sharma", comment: "The mock interviews felt so real. Highly recommended." },
                                 { name: "Rohan Gupta", comment: "Got my dream job at Zomato thanks to the roadmap." },
                                 { name: "Ananya Iyer", comment: "The LinkedIn optimization is a hidden gem." },
@@ -528,7 +528,7 @@ const LandingPage = () => {
                             ))}
                             {/* Duplicate for seamless loop */}
                             {[
-                                { name: "Arjun Mehta", comment: "CareerForge changed my resume game completely!" },
+                                { name: "Arjun Mehta", comment: "CareerSaarthi changed my resume game completely!" },
                                 { name: "Priya Sharma", comment: "The mock interviews felt so real. Highly recommended." },
                                 { name: "Rohan Gupta", comment: "Got my dream job at Zomato thanks to the roadmap." },
                                 { name: "Ananya Iyer", comment: "The LinkedIn optimization is a hidden gem." },
@@ -552,7 +552,7 @@ const LandingPage = () => {
                     </div>
                     <div className="max-w-3xl mx-auto space-y-4">
                         {[
-                            { q: "What is CareerForge?", a: "An AI-powered ecosystem designed to bridge the gap between education and high-tier industry roles." },
+                            { q: "What is CareerSaarthi?", a: "An AI-powered ecosystem designed to bridge the gap between education and high-tier industry roles." },
                             { q: "How does the Resume Analyzer work?", a: "Our AI scans your resume against thousands of real-world job descriptions to provide precise impact scores and optimization tips." },
                             { q: "Are the mock interviews realistic?", a: "Yes, we use advanced LLMs to simulate real technical and behavioral interview environments tailored to your specific role." },
                             { q: "Is LinkedIn optimization included?", a: "Absolutely. We provide data-driven strategies to make your profile stand out to top recruiters automatically." }
@@ -608,10 +608,10 @@ const LandingPage = () => {
                                 READY TO <br /> <span className="text-emerald-400">RISE?</span>
                             </h2>
                             <p className="text-xl text-gray-400 mb-12">
-                                The gap between who you are and who you want to be is called <span className="text-white font-bold italic underline decoration-emerald-500">Forge.</span>
+                                The gap between who you are and who you want to be is called <span className="text-white font-bold italic underline decoration-emerald-500">Saarthi.</span>
                             </p>
                             <button className="px-12 py-6 bg-emerald-500 text-black rounded-full font-black text-xl hover:bg-white hover:scale-105 transition-all shadow-[0_0_50px_rgba(16,185,129,0.3)]">
-                                INITIALIZE FORGE
+                                INITIALIZE SAARTHI
                             </button>
                         </motion.div>
                     </div>
@@ -621,7 +621,7 @@ const LandingPage = () => {
                 {/* FOOTER */}
                 <footer className="py-12 border-t border-white/10 bg-black/20 backdrop-blur-md">
                     <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-                        <div className="text-2xl font-black italic tracking-tighter">CAREERFORGE.</div>
+                        <div className="text-2xl font-black italic tracking-tighter">CAREERSAARTHI.</div>
                         <div className="flex gap-8 text-sm font-medium text-gray-400">
                             <a href="#" className="hover:text-emerald-400">Twitter</a>
                             <a href="#" className="hover:text-emerald-400">Discord</a>

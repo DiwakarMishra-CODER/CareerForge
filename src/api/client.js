@@ -5,20 +5,20 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 // Helper: get userId from localStorage (set during login)
 export const getUserId = () => {
-  const userStr = localStorage.getItem('careerforge_user');
+  const userStr = localStorage.getItem('careersaarthi_user');
   if (userStr) {
     try {
       const user = JSON.parse(userStr);
       return user.userId || user.id;
     } catch (e) {
-      return localStorage.getItem('careerforge_user_id') || 'demo_user';
+      return localStorage.getItem('careersaarthi_user_id') || 'demo_user';
     }
   }
-  return localStorage.getItem('careerforge_user_id') || 'demo_user';
+  return localStorage.getItem('careersaarthi_user_id') || 'demo_user';
 };
 
 // Helper: get token from localStorage
-export const getToken = () => localStorage.getItem('careerforge_token');
+export const getToken = () => localStorage.getItem('careersaarthi_token');
 
 // API wrapper
 export const api = {

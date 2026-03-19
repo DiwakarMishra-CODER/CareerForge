@@ -729,7 +729,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:px-8 lg:pb-8 pt-[152px] lg:pt-[152px] max-w-5xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
           <User className="w-6 h-6 text-emerald-400" />

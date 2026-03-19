@@ -5,8 +5,8 @@ import { Bot, User as UserIcon, Sparkles, ChevronsRight, X } from "lucide-react"
 const faqs = {
   "Getting Started": [
     {
-      question: "What is CareerForge?",
-      answer: "CareerForge is your personal career assistant! We use AI to help you build resumes, analyze them against job descriptions, prepare for interviews, and create a personalized career roadmap to guide you to your dream job."
+      question: "What is CareerSaarthi?",
+      answer: "CareerSaarthi is your personal career assistant! We use AI to help you build resumes, analyze them against job descriptions, prepare for interviews, and create a personalized career roadmap to guide you to your dream job."
     },
     {
       question: "How do I build a resume?",
