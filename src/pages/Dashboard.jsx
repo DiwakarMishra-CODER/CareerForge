@@ -36,7 +36,7 @@ export default function Dashboard() {
   const [dataLoading, setDataLoading] = useState(true);
 
   const [latestRoadmap, setLatestRoadmap] = useState(null);
-  const [stats, setStats] = useState({ resumes: 0, roadmaps: 0, interviews: 0, certifications: 0 });
+  const [stats, setStats] = useState({ resumes: 0, roadmaps: 0, interviews: 0 });
   const [showProfileReminder, setShowProfileReminder] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
@@ -74,7 +74,6 @@ export default function Dashboard() {
             resumes: resumeCountRes.count || 0,
             roadmaps: roadmapCountRes.count || 0,
             interviews: interviewsCountRes.count || 0,
-            certifications: profile?.certifications?.length || 0,
           };
           setStats(newStats);
 
@@ -120,7 +119,6 @@ export default function Dashboard() {
     { icon: "FileText", label: "Resumes Created", value: stats.resumes, color: "emerald", link: "/resume-builder" },
     { icon: "Map", label: "Career Roadmaps", value: stats.roadmaps, color: "blue", link: "/career-explorer" },
     { icon: "Brain", label: "Interviews Practiced", value: stats.interviews, color: "purple", link: "/interview-history" },
-    { icon: "Award", label: "Certifications", value: stats.certifications, color: "pink", link: "/profile" },
   ];
 
   if (dataLoading) {
@@ -238,7 +236,7 @@ export default function Dashboard() {
 
         {/* --- Stats Grid --- */}
         <motion.section variants={itemVariants} className="pt-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {statItems.map((item, idx) => (
               <StatCard key={item.label} {...item} index={idx} />
             ))}

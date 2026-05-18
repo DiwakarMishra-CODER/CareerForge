@@ -12,6 +12,8 @@ import {
     stopListening,
     isSpeechRecognitionSupported,
 } from '../../services/ai/speechService';
+import { api, getUserId } from '../../api/client';
+import InterviewResults from './InterviewResults';
 
 // ─── Status enum ─────────────────────────────────────────────────────────────
 const STATUS = {
@@ -91,6 +93,8 @@ export default function InterviewSession({ config, onEnd }) {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [isMuted, setIsMuted] = useState(false);
+    const [results, setResults] = useState(null);
+    const [isGeneratingResults, setIsGeneratingResults] = useState(false);
 
     // conversationHistory holds the raw [{role, content}] array we send to AI.
     const conversationHistory = useRef([]);
@@ -181,6 +185,87 @@ export default function InterviewSession({ config, onEnd }) {
         [inputText, status, addMessage, fetchAIResponse]
     );
 
+    const endInterviewAndGetFeedback = async () => {
+        stopSpeaking();
+        stopListening();
+
+        const hasUserResponses = messages.some(m => m.role === 'user');
+        if (!hasUserResponses) {
+            alert("Please answer at least one question before ending the session to generate feedback.");
+            return;
+        }
+
+        setIsGeneratingResults(true);
+
+        try {
+            const transcriptText = messages
+                .map(m => `${m.role === 'user' ? 'Candidate' : 'Interviewer'}: ${m.content}`)
+                .join('\n\n');
+
+            const prompt = `You are an expert HR manager and technical interview coach. 
+Analyze the following interview transcript for a "${config.jobTitle}" position at "${config.company}".
+Provide a detailed performance report.
+
+TRANSCRIPT:
+"""
+${transcriptText}
+"""
+
+Return ONLY a valid JSON object matching this schema. Do not include any markdown formatting, headers, backticks, or text outside the JSON:
+{
+  "overallScore": number (1-100),
+  "scores": {
+    "problemSolving": number (1-100),
+    "communication": number (1-100),
+    "confidence": number (1-100),
+    "accuracy": number (1-100)
+  },
+  "strengths": ["string", "string", "string"],
+  "weakPoints": ["string", "string", "string"],
+  "suggestions": ["string", "string", "string"],
+  "weakTopics": ["string", "string"]
+}`;
+
+            const responseText = await generateAIResponse(prompt, "", "resume");
+            const cleanText = responseText.replace(/```json|```/g, '').trim();
+            const result = JSON.parse(cleanText);
+
+            // Save completed session to Supabase database via express backend
+            try {
+                const userId = getUserId();
+                if (userId) {
+                    await api.post('/api/interviews', {
+                        userId,
+                        interviewType: 'custom',
+                        customRole: config.jobTitle,
+                        config: config,
+                        overallScore: result.overallScore,
+                        scores: result.scores,
+                        transcript: messages.map(m => ({ speaker: m.role === 'user' ? 'USER' : 'INTERVIEWER', content: m.content })),
+                        feedback: { overall_feedback: "Session ended early by candidate." },
+                        strengths: result.strengths,
+                        weakPoints: result.weakPoints,
+                        suggestions: result.suggestions,
+                        weakTopics: result.weakTopics,
+                        questionsAttempted: messages.filter(m => m.role === 'user').length,
+                        questionsTotal: messages.filter(m => m.role === 'ai').length,
+                        timeTaken: 120, // default time
+                        status: 'completed'
+                    });
+                }
+            } catch (saveErr) {
+                console.error("Failed to save session to DB:", saveErr);
+            }
+
+            setResults(result);
+        } catch (error) {
+            console.error("Feedback generation error:", error);
+            alert("Could not generate feedback report. Please try again.");
+        } finally {
+            setIsGeneratingResults(false);
+        }
+    };
+
     // ── Mic toggle ────────────────────────────────────────────────────────────
     const handleMicToggle = useCallback(() => {
         if (status === STATUS.LISTENING) {
@@ -242,8 +327,40 @@ export default function InterviewSession({ config, onEnd }) {
     const isMicDisabled = status === STATUS.IDLE || status === STATUS.LOADING || status === STATUS.SPEAKING;
     const micSupported = isSpeechRecognitionSupported();
 
+    if (isGeneratingResults) {
+        return (
+            <div className="fixed inset-0 bg-[#0a0a0f] flex flex-col items-center justify-center text-center p-6 z-[110]">
+                <Loader2 className="w-12 h-12 animate-spin text-cyan-400 mb-4 animate-bounce" />
+                <h2 className="text-xl font-bold text-white mb-2">Analyzing your performance...</h2>
+                <p className="text-slate-400 text-sm max-w-sm">
+                    Our AI is evaluating your communication, accuracy, and technical confidence to build your custom growth path.
+                </p>
+            </div>
+        );
+    }
+
+    if (results) {
+        return (
+            <div className="fixed inset-0 overflow-y-auto z-[100] bg-[#0a0a0f] text-white">
+                <InterviewResults
+                    results={results}
+                    interviewType={config.jobTitle}
+                    onRetry={() => {
+                        setResults(null);
+                        setMessages([]);
+                        conversationHistory.current = [];
+                        setStatus(STATUS.IDLE);
+                    }}
+                    onClose={() => {
+                        onEnd();
+                    }}
+                />
+            </div>
+        );
+    }
+
     return (
-        <div className="fixed inset-0 flex flex-col bg-slate-950/95 backdrop-blur-3xl text-white z-20">
+        <div className="fixed inset-0 flex flex-col bg-slate-950/95 backdrop-blur-3xl text-white z-[100]">
             {/* ── TOP BAR ──────────────────────────────────────────────────── */}
             <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-white/8 bg-black/30 backdrop-blur-xl flex-shrink-0">
                 <div className="flex items-center gap-3">
@@ -272,6 +389,18 @@ export default function InterviewSession({ config, onEnd }) {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {/* End Interview Button */}
+                    {status !== STATUS.IDLE && (
+                        <button
+                            id="interview-end-btn"
+                            onClick={endInterviewAndGetFeedback}
+                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition-all shadow-md hover:shadow-red-500/20 active:scale-95 flex items-center gap-1.5"
+                        >
+                            <Square className="w-3 h-3 fill-current" />
+                            End Interview
+                        </button>
+                    )}
+
                     {/* Status pill */}
                     <div className={[
                         'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300',

@@ -25,7 +25,7 @@ export const routes = [
 		path: "",
 		element: <Layout />,
 		children: [
-			{ index: true, element: <LandingPage /> },
+			{ index: true, element: <Dashboard /> },
 			{ path: "dashboard", element: <Dashboard /> },
 			{ path: "profile", element: <Profile /> },
 

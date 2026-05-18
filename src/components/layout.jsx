@@ -99,32 +99,21 @@ export default function Layout() {
       setIsLoading(true);
       try {
         const token = getToken();
-        const isLandingPath = location.pathname === "/" || location.pathname === "/landing";
+        
+        if (token) {
+          // Fetch current user details from /me
+          try {
+            const userData = await api.get('/api/auth/me');
+            setUser(userData);
 
-        if (!token && !isLandingPath) {
-          navigate("/signin");
-          return;
-        }
-
-        if (token && isLandingPath) {
-          navigate("/dashboard");
-          return;
-        }
-
-        // Fetch current user details from /me
-        try {
-          const userData = await api.get('/api/auth/me');
-          setUser(userData);
-
-          // Fetch profile
-          const profileData = await api.get(`/api/profiles/${userData._id}`);
-          setProfile(profileData);
-        } catch (err) {
-          console.error("Auth initialization failed:", err);
-          localStorage.removeItem("careersaarthi_token");
-          localStorage.removeItem("careersaarthi_user");
-          if (!isLandingPath) {
-            navigate("/signin");
+            // Fetch profile
+            const profileData = await api.get(`/api/profiles/${userData._id}`);
+            setProfile(profileData);
+          } catch (err) {
+            console.error("Auth initialization failed:", err);
+            localStorage.removeItem("careersaarthi_token");
+            localStorage.removeItem("careersaarthi_user");
+            localStorage.removeItem("careersaarthi_user_id");
           }
         }
       } catch (error) {
@@ -141,10 +130,12 @@ export default function Layout() {
     localStorage.removeItem("careersaarthi_token");
     localStorage.removeItem("careersaarthi_user");
     localStorage.removeItem("careersaarthi_user_id");
+    setUser(null);
+    setProfile(null);
     navigate("/");
   };
 
-  const isLandingPage = location.pathname === "/" || location.pathname === "/landing";
+  const isLandingPage = location.pathname === "/landing";
 
   const navigationItems = isLandingPage
     ? [
@@ -152,7 +143,7 @@ export default function Layout() {
       { title: "FAQ", to: "#faq", icon: HelpCircle },
     ]
     : [
-      { title: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
+      { title: "Dashboard", to: "/", icon: LayoutDashboard },
       { 
         title: "Resume", 
         icon: FileText,
@@ -248,7 +239,7 @@ export default function Layout() {
             </nav>
 
             <div className="flex items-center justify-end gap-6 relative z-10">
-              {!isLandingPage && (
+              {user ? (
                 <>
                   <button className="relative p-1.5 text-gray-400 hover:text-white transition-colors group/bell">
                     <Bell className="w-4 h-4" />
@@ -280,12 +271,10 @@ export default function Layout() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>
-              )}
-
-              {isLandingPage && (
+              ) : (
                 <Link to="/signin">
                   <button className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
-                    Join Us
+                    Sign In
                   </button>
                 </Link>
               )}

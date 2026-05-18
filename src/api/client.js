@@ -1,7 +1,9 @@
 // src/api/client.js
 
 // Base URL from env variable or fallback for development
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL !== undefined 
+  ? import.meta.env.VITE_API_BASE_URL 
+  : (import.meta.env.DEV ? 'http://localhost:4000' : '');
 
 // Helper: get userId from localStorage (set during login)
 export const getUserId = () => {

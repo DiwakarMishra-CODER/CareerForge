@@ -30,30 +30,34 @@ app.get('/health', (req, res) =>
   res.json({ status: 'OK', database: 'Supabase (PostgreSQL)', timestamp: new Date() })
 );
 
-// Start server with self-healing EADDRINUSE recycling
-const server = app.listen(PORT, () =>
-  console.log(`🚀 CareerForge server running on http://localhost:${PORT} (Supabase)`)
-);
+if (!process.env.VERCEL) {
+  // Start server with self-healing EADDRINUSE recycling
+  const server = app.listen(PORT, () =>
+    console.log(`🚀 CareerForge server running on http://localhost:${PORT} (Supabase)`)
+  );
 
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.log(`⚠️ Port ${PORT} is busy. Automatically self-healing and recycling port...`);
-    const { exec } = require('child_process');
-    // Forcibly clear port 4000 on macOS/Linux
-    exec(`kill -9 $(lsof -t -i:${PORT}) 2>/dev/null || true`, () => {
-      setTimeout(() => {
-        try {
-          server.listen(PORT, () => {
-            console.log(`🚀 CareerForge server running on http://localhost:${PORT} (Supabase)`);
-          });
-        } catch (retryErr) {
-          console.error('Self-healing port recycle failed:', retryErr);
-          process.exit(1);
-        }
-      }, 500); // 500ms delay to let the OS release the TCP socket
-    });
-  } else {
-    throw err;
-  }
-});
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`⚠️ Port ${PORT} is busy. Automatically self-healing and recycling port...`);
+      const { exec } = require('child_process');
+      // Forcibly clear port 4000 on macOS/Linux
+      exec(`kill -9 $(lsof -t -i:${PORT}) 2>/dev/null || true`, () => {
+        setTimeout(() => {
+          try {
+            server.listen(PORT, () => {
+              console.log(`🚀 CareerForge server running on http://localhost:${PORT} (Supabase)`);
+            });
+          } catch (retryErr) {
+            console.error('Self-healing port recycle failed:', retryErr);
+            process.exit(1);
+          }
+        }, 500); // 500ms delay to let the OS release the TCP socket
+      });
+    } else {
+      throw err;
+    }
+  });
+}
+
+module.exports = app;
 

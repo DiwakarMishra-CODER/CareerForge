@@ -4,8 +4,8 @@
   "description": "CareerForge Express + MongoDB backend",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "kill -9 $(lsof -t -i:4000) 2>/dev/null || true; nodemon index.js"
+    "start": "node --experimental-websocket index.js",
+    "dev": "kill -9 $(lsof -t -i:4000) 2>/dev/null || true; nodemon --experimental-websocket index.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
