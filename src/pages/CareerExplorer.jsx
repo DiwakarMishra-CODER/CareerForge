@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from "react-router-dom";
-import { fetchWithRetry, getApiKey } from '../utils/api';
+import { generateAIResponse } from '../services/ai/openRouterService';
 import { Map, Loader2, Sparkles, BookOpen, BrainCircuit, HeartPulse, Palette, Briefcase, Atom, ArrowLeft, Target, TrendingUp, Youtube, Globe, FileText, CalendarDays, CheckCircle, Search, History, ArrowRight } from 'lucide-react';
 import { api, getUserId } from '../api/client.js';
 
@@ -208,24 +208,8 @@ export default function CareerExplorer() {
         The "search_query" should be a concise and effective string to find that specific resource online (e.g., 'CS50 Introduction to Computer Science Harvard'). Do NOT provide a URL.
         Return ONLY a valid JSON object with the structure: { "career_goal": "string", "timeline_months": number, "milestones": [ { "title": "string", "description": "string", "skills_gained": ["string"], "suggested_resources": [ { "title": "string", "type": "string", "provider": "string", "search_query": "string" } ] } ] }`;
 
-      const apiKey = getApiKey();
-      const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" },
-        }),
-      });
-      if (!response.ok) {
-          const errText = await response.text();
-          console.error("Gemini API Error Response:", errText);
-          throw new Error(`API request for roadmap failed: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log("Gemini API raw response:", data);
-      const result = JSON.parse(data.candidates[0].content.parts[0].text);
-      console.log("Parsed result:", result);
+      const responseText = await generateAIResponse(prompt, "", "explorer");
+      const result = JSON.parse(responseText);
       setRoadmap(result);
       
       const userId = getUserId();
@@ -269,18 +253,8 @@ export default function CareerExplorer() {
             Roadmap: ${JSON.stringify(roadmap.milestones, null, 2)}
             Return ONLY a valid JSON object. For a "weekly" plan, keys should be "Week 1", "Week 2", etc. For "monthly", use "Month 1", etc. Each period should contain an array of specific tasks as strings.`;
         
-        const apiKey = getApiKey();
-        const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: "application/json" },
-            }),
-        });
-        if (!response.ok) throw new Error("API request for study plan failed");
-        const data = await response.json();
-        const result = JSON.parse(data.candidates[0].content.parts[0].text);
+        const responseText = await generateAIResponse(prompt, "", "explorer");
+        const result = JSON.parse(responseText);
         setStudyPlan(result);
     } catch (error) {
         console.error("Study plan generation error:", error);

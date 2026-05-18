@@ -44,7 +44,7 @@ const LinkedInInput = ({ onStartAnalysis }) => {
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-semibold tracking-wide mb-2">
                         <Sparkles className="w-4 h-4" /> AI PROFILE SCANNER
                     </div>
-                    <h2 className="text-3xl sm:text-4xl font-black italic tracking-tighter uppercase text-white">
+                    <h2 className="text-3xl sm:text-4xl font-black tracking-tighter text-white">
                         Optimize Your <span className="text-cyan-400">LinkedIn Presence</span>
                     </h2>
                     <p className="text-gray-400 text-sm max-w-lg mx-auto leading-relaxed">
@@ -56,13 +56,13 @@ const LinkedInInput = ({ onStartAnalysis }) => {
                     <div className="flex gap-2 p-1.5 bg-gray-950/50 border border-white/10 rounded-2xl w-fit mx-auto sm:mx-0">
                         <button
                             onClick={() => setInputType('pdf')}
-                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase italic tracking-wider transition-all ${inputType === 'pdf' ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
+                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${inputType === 'pdf' ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
                         >
                             <FileText className="w-3 h-3 inline mr-2" /> Profile PDF
                         </button>
                         <button
                             onClick={() => setInputType('url')}
-                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase italic tracking-wider transition-all ${inputType === 'url' ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
+                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${inputType === 'url' ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
                         >
                             <LinkIcon className="w-3 h-3 inline mr-2" /> LinkedIn URL
                         </button>
@@ -108,7 +108,7 @@ const LinkedInInput = ({ onStartAnalysis }) => {
                     <button
                         onClick={handleStart}
                         disabled={(inputType === 'pdf' && !file) || (inputType === 'url' && !url.trim())}
-                        className="w-full py-5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-2xl font-black italic tracking-tighter uppercase text-xl hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-cyan-500/20 active:scale-[0.98]"
+                        className="w-full py-5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-2xl font-black tracking-tighter uppercase text-xl hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl hover:shadow-cyan-500/20 active:scale-[0.98]"
                     >
                         <Search className="w-6 h-6" />
                         Analyze Profile

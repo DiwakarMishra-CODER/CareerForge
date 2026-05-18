@@ -57,7 +57,7 @@ const AIGeneratorModal = ({ isOpen, onClose, type }) => {
                                 <Sparkles className="text-cyan-400 w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-black italic tracking-tighter uppercase text-white">
+                                <h2 className="text-2xl font-black tracking-tighter text-white">
                                     AI <span className="text-cyan-400">{type === 'headline' ? 'Headline' : 'Summary'} Generator</span>
                                 </h2>
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mt-1">Refined by CareerSaarthi Engine</p>
@@ -69,7 +69,7 @@ const AIGeneratorModal = ({ isOpen, onClose, type }) => {
                     <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                         <div className="flex gap-3 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
                             <Info className="text-blue-400 w-5 h-5 flex-shrink-0" />
-                            <p className="text-xs text-blue-100/70 italic leading-relaxed">
+                            <p className="text-xs text-blue-100/70 leading-relaxed">
                                 Our AI analyzed your top skills and experience to craft these high-impact alternatives. Choose one to replace your current {type}.
                             </p>
                         </div>
@@ -84,7 +84,7 @@ const AIGeneratorModal = ({ isOpen, onClose, type }) => {
                                     className="p-6 bg-white/5 border border-white/5 rounded-3xl group hover:border-cyan-500/30 transition-all cursor-pointer relative"
                                     onClick={() => handleCopy(text, i)}
                                 >
-                                    <p className="text-sm text-gray-300 group-hover:text-white transition-colors leading-relaxed pr-10 italic font-medium">
+                                    <p className="text-sm text-gray-300 group-hover:text-white transition-colors leading-relaxed pr-10 font-medium">
                                         "{text}"
                                     </p>
                                     <div className="absolute top-6 right-6">
@@ -106,7 +106,7 @@ const AIGeneratorModal = ({ isOpen, onClose, type }) => {
                     <div className="p-8 bg-white/5 border-t border-white/5 flex justify-end">
                         <button 
                             onClick={onClose}
-                            className="px-8 py-3 bg-white text-gray-950 rounded-xl font-black italic tracking-tighter uppercase text-sm hover:scale-105 active:scale-95 transition-all shadow-xl"
+                            className="px-8 py-3 bg-white text-gray-950 rounded-xl font-black tracking-tighter text-sm hover:scale-105 active:scale-95 transition-all shadow-xl"
                         >
                             Continue Optimizing
                         </button>

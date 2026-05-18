@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, getUserId } from "../api/client.js";
-import { fetchWithRetry, getApiKey } from "../utils/api.js";
+import { fetchWithRetry } from "../utils/api.js";
+import { generateAIResponse } from "../services/ai/openRouterService.js";
 import { 
     Loader2, Save, Plus, Trash2, ArrowRight, ArrowLeft, 
     Sparkles, Layout as LayoutIcon, User, FileText, 
@@ -132,22 +133,8 @@ export default function ResumeBuilder() {
     try {
       const prompt = `You are a professional resume writer. Based on the job title "${experienceItem.title}" and the company "${experienceItem.company}", generate 3-4 concise, action-oriented bullet points that highlight key achievements. Use the STAR method. Return ONLY a valid JSON object: { "bullet_points": ["string"] }`;
 
-      const apiKey = getApiKey();
-      const response = await fetchWithRetry(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" },
-          }),
-        }
-      );
-      if (!response.ok) throw new Error("AI suggestion failed");
-
-      const data = await response.json();
-      const result = JSON.parse(data.candidates[0].content.parts[0].text);
+      const responseText = await generateAIResponse(prompt, "You are a professional resume writer.", "resume");
+      const result = typeof responseText === "string" ? JSON.parse(responseText) : responseText;
 
       if (result.bullet_points && result.bullet_points.length > 0) {
         const list = [...resumeData.experience];

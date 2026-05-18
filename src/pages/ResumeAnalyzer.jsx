@@ -77,9 +77,7 @@ export default function ResumeAnalyzer() {
       formData.append('jobDescription', jobDescription);
 
       // Backend API call (custom hardcoded backend logic)
-      const data = await api.post('/api/resumes/analyze', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const data = await api.upload('/api/resumes/analyze', formData);
 
       setAnalysis(data);
       fetchHistory(); // Refresh history
@@ -109,7 +107,7 @@ export default function ResumeAnalyzer() {
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <Zap className="w-20 h-20 text-blue-400" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-4 italic tracking-tighter">Analysis Results</h2>
+          <h2 className="text-xl font-bold text-white mb-4 tracking-tighter">Analysis Results</h2>
           <ScoreGauge score={analysis.job_match_score || 0} size={200} />
           <p className="text-gray-400 text-sm text-center mt-4">
             {analysis.job_match_score >= 70 ? "Excellent alignment with technical standards." : "Room for improvement in key areas."}
@@ -155,7 +153,7 @@ export default function ResumeAnalyzer() {
             <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
               <Lightbulb className="w-5 h-5 text-blue-400" />
             </div>
-            <h3 className="font-black text-xl italic tracking-tighter uppercase">AI Suggestions</h3>
+            <h3 className="font-black text-xl tracking-tighter uppercase">AI Suggestions</h3>
           </div>
           <ul className="space-y-4">
             {analysis.improvement_suggestions.map((item, i) => (
@@ -181,7 +179,7 @@ export default function ResumeAnalyzer() {
             <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
               <Briefcase className="w-5 h-5 text-emerald-400" />
             </div>
-            <h3 className="font-black text-xl italic tracking-tighter uppercase">Suitable Roles</h3>
+            <h3 className="font-black text-xl tracking-tighter uppercase">Suitable Roles</h3>
           </div>
           <div className="flex flex-wrap gap-2">
             {analysis.suitable_roles.map((role, i) => (
@@ -213,7 +211,7 @@ export default function ResumeAnalyzer() {
       <div className="flex justify-center pt-8">
         <button
           onClick={resetAnalyzer}
-          className="group relative px-8 py-4 bg-white text-gray-950 rounded-2xl font-black italic tracking-tighter uppercase text-lg hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50px_rgba(59,130,246,0.2)]"
+          className="group relative px-8 py-4 bg-white text-gray-950 rounded-2xl font-black tracking-tighter uppercase text-lg hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50px_rgba(59,130,246,0.2)]"
         >
           <span className="relative z-10 flex items-center gap-2">
             <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-700" />
@@ -227,7 +225,7 @@ export default function ResumeAnalyzer() {
   const HistoryList = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-black italic tracking-tighter uppercase">Analysis History</h2>
+        <h2 className="text-2xl font-black tracking-tighter uppercase">Analysis History</h2>
         <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{history.length} Saved Scans</span>
       </div>
       {history.length === 0 ? (
@@ -251,7 +249,7 @@ export default function ResumeAnalyzer() {
                   <FileText className="w-5 h-5 text-blue-400" />
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-black italic tracking-tighter text-white">{item.matchScore}%</span>
+                  <span className="text-2xl font-black tracking-tighter text-white">{item.matchScore}%</span>
                   <p className="text-[10px] text-gray-500 uppercase font-bold">Matching</p>
                 </div>
               </div>
@@ -279,7 +277,7 @@ export default function ResumeAnalyzer() {
               <Search className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl lg:text-5xl font-black italic tracking-tighter uppercase leading-none">
+              <h1 className="text-4xl lg:text-5xl font-black tracking-tighter uppercase leading-none">
                 Resume <span className="text-blue-500">Analyzer</span>
               </h1>
               <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-2">
@@ -291,13 +289,13 @@ export default function ResumeAnalyzer() {
           <div className="bg-white/5 backdrop-blur-md border border-white/10 p-1.5 rounded-2xl flex gap-1">
             <button
               onClick={() => setActiveTab('analyze')}
-              className={`px-6 py-2 rounded-xl text-xs font-black uppercase italic tracking-wider transition-all ${activeTab === 'analyze' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'analyze' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
             >
               Analyzer
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`px-6 py-2 rounded-xl text-xs font-black uppercase italic tracking-wider transition-all ${activeTab === 'history' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'history' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
             >
               History
             </button>
@@ -320,7 +318,7 @@ export default function ResumeAnalyzer() {
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                     <div className="text-center space-y-4">
-                      <h2 className="text-2xl font-black italic tracking-tighter uppercase">1. Scan Your Resume</h2>
+                      <h2 className="text-2xl font-black tracking-tighter uppercase">1. Scan Your Resume</h2>
                       <p className="text-gray-400 text-sm max-w-xs mx-auto">Upload your PDF resume to start the deep logic analysis engine.</p>
                     </div>
 
@@ -349,7 +347,7 @@ export default function ResumeAnalyzer() {
                     <button
                       onClick={analyzeResume}
                       disabled={isProcessing || !file}
-                      className="w-full py-5 bg-blue-600 text-white rounded-[1.5rem] font-black italic tracking-tighter uppercase text-xl hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-600 transition-all flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(37,99,235,0.2)] active:scale-95"
+                      className="w-full py-5 bg-blue-600 text-white rounded-[1.5rem] font-black tracking-tighter uppercase text-xl hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-600 transition-all flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(37,99,235,0.2)] active:scale-95"
                     >
                       {isProcessing ? (
                         <>
@@ -368,7 +366,7 @@ export default function ResumeAnalyzer() {
                   {/* Options Zone */}
                   <div className="lg:col-span-2 space-y-8">
                     <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 space-y-6">
-                      <h3 className="font-black text-xl italic tracking-tighter uppercase flex items-center gap-3">
+                      <h3 className="font-black text-xl tracking-tighter uppercase flex items-center gap-3">
                         <ClipboardPaste className="w-5 h-5 text-blue-400" />
                         Job Matching
                       </h3>

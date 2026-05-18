@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { fetchWithRetry, getApiKey } from '../utils/api';
+import { fetchWithRetry } from '../utils/api';
+import { generateAIResponse } from '../services/ai/openRouterService';
 import { Compass, Book, Brain, FlaskConical, BarChart3, Palette, Landmark, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 
 const streams = {
@@ -70,18 +71,8 @@ export default function CareerCompass() {
           "top_entrance_exams": ["string"]
         }`;
 
-      const apiKey = getApiKey();
-      const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" },
-        }),
-      });
-      if (!response.ok) throw new Error("API request failed");
-      const data = await response.json();
-      setCareerDetails(JSON.parse(data.candidates[0].content.parts[0].text));
+      const responseText = await generateAIResponse(prompt, "You are a career counseling assistant.", "chat");
+      setCareerDetails(JSON.parse(responseText));
     } catch (error) {
       console.error("Failed to fetch career details:", error);
       setStep('domainSelection');
@@ -100,13 +91,8 @@ export default function CareerCompass() {
         Return ONLY a valid JSON object with the structure:
         { "degree": "string", "roadmap": { "Year 1": { "focus": "string", "key_activities": ["string"] }, "Year 2": { ... }, "Year 3": { ... }, "Year 4": { ... } } }`;
 
-      const apiKey = getApiKey();
-      const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }),
-      });
-      if (!response.ok) throw new Error("API request failed");
-      const data = await response.json();
-      setRoadmap(JSON.parse(data.candidates[0].content.parts[0].text));
+      const responseText = await generateAIResponse(prompt, "You are a career counseling assistant.", "chat");
+      setRoadmap(JSON.parse(responseText));
     } catch (error) {
       console.error("Failed to generate roadmap:", error);
       setStep('careerDetails');

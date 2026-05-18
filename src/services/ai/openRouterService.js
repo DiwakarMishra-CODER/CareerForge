@@ -1,77 +1,72 @@
-// OpenRouter AI Service - Interview Question Generation with Multi-Provider Fallback
-// Fallback chain: OpenRouter → Groq → Gemini
+/**
+ * OpenRouter AI Service
+ * Intelligent model routing based on feature type to optimize performance and cost.
+ */
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const OPENROUTER_MODELS = [
-    import.meta.env.VITE_OPENROUTER_MODEL_1 || 'mistralai/mistral-7b-instruct',
-    import.meta.env.VITE_OPENROUTER_MODEL_2 || 'meta-llama/llama-3-8b-instruct',
-];
-
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 
-class OpenRouterService {
-    constructor() {
-        this.conversationHistory = [];
+export const generateAIResponse = async (prompt, systemPrompt = "", featureType = "chat") => {
+    if (!OPENROUTER_API_KEY) {
+        throw new Error('OpenRouter API key is missing. Please check your environment variables.');
     }
 
-    async generateResponse(prompt, interviewType = 'dsa', requiresEvaluation = false) {
-        if (!OPENROUTER_API_KEY) {
-            throw new Error('OpenRouter API key not configured');
+    // Determine Model & Format based on featureType
+    let model = 'mistralai/mistral-nemo:free'; // Default for chat and fallback
+    let responseFormat = null;
+
+    if (featureType === 'interview') {
+        model = 'meta-llama/llama-3-70b-instruct';
+    } else if (featureType === 'resume' || featureType === 'linkedin' || featureType === 'explorer') {
+        model = 'openai/gpt-4o-mini';
+        responseFormat = { type: 'json_object' };
+    } else if (featureType === 'chat') {
+        model = 'mistralai/mistral-nemo:free';
+    }
+
+    const messages = [];
+    if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: prompt });
+
+    const payload = {
+        model: model,
+        messages: messages,
+    };
+
+    if (responseFormat) {
+        payload.response_format = responseFormat;
+    }
+
+    try {
+        const response = await fetch(OPENROUTER_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                // Required OpenRouter headers
+                'HTTP-Referer': window.location.origin, // Pass the site URL
+                'X-Title': 'CareerForge',               // Pass the site name
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errBody = await response.text();
+            throw new Error(`OpenRouter API error: ${response.status} - ${errBody}`);
         }
 
-        const messages = [
-            { role: 'system', content: `You are a technical interviewer for ${interviewType} interviews.` },
-            ...this.conversationHistory,
-            { role: 'user', content: prompt }
-        ];
-
-        try {
-            const response = await fetch(OPENROUTER_API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                },
-                body: JSON.stringify({
-                    model: OPENROUTER_MODELS[0],
-                    messages: messages,
-                    max_tokens: 1000,
-                })
-            });
-
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            const data = await response.json();
-            const text = data.choices[0].message.content;
-
-            this.conversationHistory.push({ role: 'user', content: prompt });
-            this.conversationHistory.push({ role: 'assistant', content: text });
-
-            return { text, evaluation: null };
-        } catch (error) {
-            console.error('OpenRouter failed:', error);
-            throw error;
+        const data = await response.json();
+        
+        if (data.choices && data.choices.length > 0) {
+            return data.choices[0].message.content;
+        } else {
+            throw new Error('Unexpected response structure from OpenRouter');
         }
+
+    } catch (error) {
+        console.error(`[OpenRouter Service] Failed to generate response for ${featureType}:`, error);
+        throw error;
     }
-
-    async generateIntro(interviewType, domain = '', config = {}) {
-        const prompt = `You are a friendly AI interviewer starting a ${interviewType} interview${domain ? ` for the ${domain} domain` : ''}.
-        
-        Generate a warm, professional greeting (2-3 sentences) that:
-        1. Introduces yourself as an AI interviewer
-        2. Briefly explains what the interview will cover
-        3. Encourages the candidate
-        
-        Keep it natural and friendly. Respond with ONLY the greeting text.`;
-
-        const response = await this.generateResponse(prompt, interviewType);
-        return response.text;
-    }
-
-    resetSession() {
-        this.conversationHistory = [];
-    }
-}
-
-const openRouterService = new OpenRouterService();
-export default openRouterService;
+};

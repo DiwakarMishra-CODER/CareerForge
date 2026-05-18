@@ -150,7 +150,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen text-white relative flex flex-col pt-0">
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -158,7 +158,7 @@ export default function Dashboard() {
       >
         <main className="max-w-7xl mx-auto px-4 md:px-8 pt-36 pb-16 space-y-12">
         {showProfileReminder && (
-          <motion.div 
+          <motion.div
             variants={itemVariants}
             className="bg-yellow-500/10 backdrop-blur-2xl rounded-2xl border border-yellow-400/20 p-5 mb-8 overflow-hidden relative"
           >
@@ -173,7 +173,7 @@ export default function Dashboard() {
                 <h3 className="text-lg font-black text-white mb-1 uppercase tracking-tighter">Scale Your Career</h3>
                 <p className="text-yellow-200/70 text-sm mb-4">Complete your profile to unlock hyper-personalized AI career paths and skill recommendations.</p>
                 <Link to="/profile">
-                  <motion.button 
+                  <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black rounded-xl text-xs px-5 py-2.5 transition-colors shadow-lg shadow-yellow-500/20"
@@ -189,13 +189,11 @@ export default function Dashboard() {
         {/* --- Hero Section --- */}
         <section className="grid lg:grid-cols-[1fr_400px] gap-12 items-center pt-8">
           <motion.div variants={itemVariants} className="space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest mb-2">
-              <Zap size={14} fill="currentColor"/> AI Career Assistant Active
-            </div>
+
             <h1 className="text-5xl lg:text-7xl font-black text-white leading-[0.9] tracking-tighter">
-              Discover Your <br /> <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Future, {firstName}</span>.
+              Discover Your <br /> <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent pr-2">Future, {firstName}</span>.
             </h1>
-            
+
             <div className="relative">
                <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500/50 to-transparent rounded-full" />
                {aiSuggestion ? (
@@ -215,7 +213,7 @@ export default function Dashboard() {
             <div className="flex flex-wrap gap-4 pt-4">
               {actionItems.map((item, index) => (
                 <Link to={item.link} key={index}>
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-3 px-6 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl font-black text-sm hover:bg-emerald-500 hover:text-slate-900 transition-all group lg:min-w-[200px]"
@@ -228,8 +226,8 @@ export default function Dashboard() {
               ))}
             </div>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             variants={itemVariants}
             className="hidden lg:flex items-center justify-center relative"
           >
@@ -251,7 +249,7 @@ export default function Dashboard() {
         <div className="grid lg:grid-cols-[1fr_400px] gap-8">
           <motion.div variants={itemVariants} className="space-y-8">
             <SkillGapWidget profile={profile} roadmap={latestRoadmap} />
-            
+
             <Suspense fallback={
               <div className="flex justify-center items-center h-48 bg-white/5 rounded-2xl">
                 <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />

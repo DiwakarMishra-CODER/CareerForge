@@ -16,7 +16,7 @@ export default function StatCard({ icon, label, value, color, link, index = 0 })
         purple: "text-purple-400",
         pink: "text-pink-400",
     };
-    
+
     const glowClasses = {
         emerald: "shadow-emerald-500/20",
         blue: "shadow-blue-500/20",
@@ -27,7 +27,7 @@ export default function StatCard({ icon, label, value, color, link, index = 0 })
     const IconComponent = icons[icon];
 
     const CardContent = (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -35,7 +35,7 @@ export default function StatCard({ icon, label, value, color, link, index = 0 })
             className={`group bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-2xl transition-all duration-300 hover:bg-white/10 ${glowClasses[color]}`}
         >
             <div className="flex items-center gap-5">
-                <motion.div 
+                <motion.div
                     whileHover={{ rotate: 15, scale: 1.1 }}
                     className={`w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5 group-hover:border-white/20 transition-colors`}
                 >

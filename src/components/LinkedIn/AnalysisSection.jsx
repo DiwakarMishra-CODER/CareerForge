@@ -29,11 +29,11 @@ const AnalysisSection = ({ data, onGenerateAI }) => {
                 <div className="space-y-6">
                     <div className="p-4 bg-gray-900 border border-white/5 rounded-2xl">
                         <p className="text-[10px] uppercase font-bold text-gray-500 mb-2">Current Headline</p>
-                        <p className="text-sm text-gray-300 italic">"{data.headline.current}"</p>
+                        <p className="text-sm text-gray-300">"{data.headline.current}"</p>
                     </div>
                     <div className="flex gap-4 p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
                         <AlertTriangle className="text-amber-400 w-5 h-5 flex-shrink-0" />
-                        <p className="text-sm text-amber-100/80 leading-relaxed italic">
+                        <p className="text-sm text-amber-100/80 leading-relaxed">
                             {data.headline.analysis}
                         </p>
                     </div>
@@ -46,7 +46,7 @@ const AnalysisSection = ({ data, onGenerateAI }) => {
                     </div>
                     <button 
                         onClick={() => onGenerateAI('headline')}
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-cyan-600/20 border border-cyan-500/20 rounded-2xl text-cyan-400 font-bold uppercase italic tracking-tighter hover:bg-cyan-500/30 transition-all group"
+                        className="w-full flex items-center justify-center gap-2 py-4 bg-cyan-600/20 border border-cyan-500/20 rounded-2xl text-cyan-400 font-bold uppercase tracking-tighter hover:bg-cyan-500/30 transition-all group"
                     >
                         <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Generate AI Headlines
                     </button>
@@ -62,7 +62,7 @@ const AnalysisSection = ({ data, onGenerateAI }) => {
                 <div className="space-y-6">
                     <div className="p-4 bg-gray-900 border border-white/5 rounded-2xl">
                         <p className="text-[10px] uppercase font-bold text-gray-500 mb-2">Existing Summary</p>
-                        <p className="text-sm text-gray-300 leading-relaxed italic">"{data.about.current}"</p>
+                        <p className="text-sm text-gray-300 leading-relaxed">"{data.about.current}"</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl">
@@ -81,14 +81,14 @@ const AnalysisSection = ({ data, onGenerateAI }) => {
                             <h5 className="text-[10px] uppercase font-black text-emerald-500/80 mb-3 flex items-center gap-2">
                                 <Sparkles className="w-3 h-3" /> AI Suggestion
                             </h5>
-                            <p className="text-xs text-emerald-100/70 italic">
+                            <p className="text-xs text-emerald-100/70">
                                 {data.about.suggestion}
                             </p>
                         </div>
                     </div>
                     <button 
                         onClick={() => onGenerateAI('summary')}
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-emerald-600/20 border border-emerald-500/20 rounded-2xl text-emerald-400 font-bold uppercase italic tracking-tighter hover:bg-emerald-500/30 transition-all"
+                        className="w-full flex items-center justify-center gap-2 py-4 bg-emerald-600/20 border border-emerald-500/20 rounded-2xl text-emerald-400 font-bold uppercase tracking-tighter hover:bg-emerald-500/30 transition-all"
                     >
                         <Zap className="w-4 h-4" /> Rewrite with AI
                     </button>
@@ -105,16 +105,16 @@ const AnalysisSection = ({ data, onGenerateAI }) => {
                     {data.experience.items.map((item, i) => (
                         <div key={i} className="p-6 bg-white/5 border border-white/10 rounded-3xl space-y-4 group/item">
                             <div className="flex items-center justify-between">
-                                <h4 className="font-black italic tracking-tighter text-white uppercase text-sm">{item.role}</h4>
+                                <h4 className="font-black tracking-tighter text-white text-base">{item.role}</h4>
                                 <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${item.impact === 'High' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gray-500/20 text-gray-400'}`}>
                                     {item.impact} Impact
                                 </span>
                             </div>
                             <div className="space-y-2">
-                                <p className="text-xs text-gray-500 line-through italic">"{item.original}"</p>
+                                <p className="text-xs text-gray-500 line-through">"{item.original}"</p>
                                 <div className="p-4 bg-emerald-500/5 border border-dashed border-emerald-500/20 rounded-xl relative group-hover/item:border-emerald-500/40 transition-all">
                                     <ArrowRight className="absolute -left-3 top-1/2 -translate-y-1/2 text-emerald-500 bg-gray-950 p-1 rounded-full w-6 h-6 border border-emerald-500/20" />
-                                    <p className="text-sm text-emerald-400 italic font-medium leading-relaxed">
+                                    <p className="text-sm text-emerald-400 font-medium leading-relaxed">
                                         "{item.improved}"
                                     </p>
                                 </div>
@@ -175,7 +175,7 @@ const AnalysisSection = ({ data, onGenerateAI }) => {
                                 <section.icon className="w-5 h-5" />
                             </div>
                             <div className="text-left">
-                                <h3 className={`font-black italic tracking-tighter uppercase transition-colors ${openSection === section.id ? 'text-white text-lg' : 'text-gray-400'}`}>
+                                <h3 className={`font-black tracking-tighter transition-colors ${openSection === section.id ? 'text-white text-xl' : 'text-gray-400 text-lg'}`}>
                                     {section.label}
                                 </h3>
                                 {section.score > 0 && (

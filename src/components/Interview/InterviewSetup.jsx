@@ -1,240 +1,215 @@
-import { ArrowLeft, ArrowRight, Brain, Target, Users, Sparkles, Clock, Zap, Building2, Code2, Volume2, Play, LineChart, Briefcase } from 'lucide-react';
-import speechService from '../../services/ai/speechService';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Briefcase, Building2, ChevronRight, Sparkles, BookOpen, User } from 'lucide-react';
 
-// Interview Setup Component - Universalized for any career field
-export default function InterviewSetup({
-    selectedType,
-    selectedDomain = '',
-    onStart,
-    onBack
-}) {
-    const [config, setConfig] = useState({
-        difficulty: 'intermediate',
-        companyTarget: 'product',
-        duration: 30,
-        skillFocus: 'general',
-        voiceURI: ''
+const EXPERIENCE_LEVELS = [
+    { value: 'fresher', label: 'Fresher / Entry-level (0–1 yr)' },
+    { value: 'junior', label: 'Junior (1–3 yrs)' },
+    { value: 'mid', label: 'Mid-level (3–6 yrs)' },
+    { value: 'senior', label: 'Senior (6–10 yrs)' },
+    { value: 'lead', label: 'Lead / Principal (10+ yrs)' },
+];
+
+/**
+ * InterviewSetup
+ * Collects job context from the user before the interview session begins.
+ *
+ * Props:
+ *   onStart(config) – called with { jobTitle, company, experienceLevel, jobDescription }
+ */
+export default function InterviewSetup({ onStart }) {
+    const [form, setForm] = useState({
+        jobTitle: '',
+        company: '',
+        experienceLevel: 'mid',
+        jobDescription: '',
     });
+    const [errors, setErrors] = useState({});
+    const [focused, setFocused] = useState(null);
 
-    const [availableVoices, setAvailableVoices] = useState([]);
-
-    useEffect(() => {
-        const loadVoices = () => {
-            if (!window.speechSynthesis) return;
-            const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
-            setAvailableVoices(voices);
-            if (voices.length > 0 && !config.voiceURI) {
-                const defaultVoice =
-                    voices.find(v => v.name.includes('Aria')) ||
-                    voices.find(v => v.name.includes('Google')) ||
-                    voices[0];
-
-                if (defaultVoice) {
-                    setConfig(prev => ({ ...prev, voiceURI: defaultVoice.voiceURI }));
-                }
-            }
-        };
-
-        loadVoices();
-        if (window.speechSynthesis) {
-            window.speechSynthesis.onvoiceschanged = loadVoices;
-        }
-    }, []);
-
-    const handleTestVoice = (voiceURI) => {
-        speechService.speak("Ready to help you master your session.");
+    const handleChange = (field, value) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
+        if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
     };
 
-    // Category metadata - Domain agnostic
-    const categoryInfo = {
-        'behavioral': {
-            title: 'Behavioral & Leadership',
-            color: 'from-pink-500 to-rose-500',
-            description: 'Focus on soft skills, situation handling, and cultural fit.'
-        },
-        'domain': {
-            title: selectedDomain || 'Domain Expertise',
-            color: 'from-cyan-500 to-blue-500',
-            description: `Deep dive into the core knowledge required for ${selectedDomain || 'your field'}.`
-        },
-        'case-study': {
-            title: 'Strategy & Case Study',
-            color: 'from-purple-500 to-pink-500',
-            description: 'Solve complex business problems and strategic scenarios.'
-        }
+    const validate = () => {
+        const next = {};
+        if (!form.jobTitle.trim()) next.jobTitle = 'Job title is required.';
+        if (!form.company.trim()) next.company = 'Company name is required.';
+        if (!form.jobDescription.trim()) next.jobDescription = 'Please paste the job description.';
+        setErrors(next);
+        return Object.keys(next).length === 0;
     };
 
-    const currentCat = categoryInfo[selectedType] || categoryInfo['domain'];
-
-    const difficulties = [
-        { id: 'beginner', label: 'Junior / Entry', desc: 'Fundamentals & basic scenarios', color: 'emerald' },
-        { id: 'intermediate', label: 'Mid-Level', desc: 'Situational challenges & depth', color: 'amber' },
-        { id: 'advanced', label: 'Senior / Expert', desc: 'Strategic & leadership depth', color: 'red' }
-    ];
-
-    const companies = [
-        { id: 'standard', label: 'Corporate / Big Co', desc: 'Process & structure focused', icon: '🏢' },
-        { id: 'boutique', label: 'Boutique / Specialist', desc: 'Niche & expertise focused', icon: '💎' },
-        { id: 'startup', label: 'Fast-Paced Startup', desc: 'Action & agility focused', icon: '🚀' },
-        { id: 'consulting', label: 'Advisory / Consulting', desc: 'Solution & client focused', icon: '🤝' }
-    ];
-
-    const durations = [
-        { value: 15, label: '15 min', desc: 'Quick Pulse' },
-        { value: 30, label: '30 min', desc: 'Standard Round' },
-        { value: 45, label: '45 min', desc: 'Full Performance' }
-    ];
-
-    const handleStart = () => {
-        onStart({
-            ...config,
-            interviewType: selectedType,
-            domain: selectedDomain
-        });
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (validate()) onStart(form);
     };
+
+    const inputBase =
+        'w-full bg-white/5 border rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none transition-all duration-300 text-sm font-medium';
+    const inputIdle = 'border-white/10 hover:border-white/20';
+    const inputActive = 'border-cyan-500/60 bg-white/8 shadow-[0_0_20px_rgba(6,182,212,0.08)]';
+    const errorClass = 'border-red-500/60 bg-red-500/5';
+
+    const fieldClass = (name) =>
+        [
+            inputBase,
+            errors[name] ? errorClass : focused === name ? inputActive : inputIdle,
+        ].join(' ');
 
     return (
-        <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center py-20 px-6">
-            <main className="container mx-auto max-w-4xl relative z-10">
-                {/* Header - Icon Removed as requested */}
-                <div className="text-center mb-16 animate-in fade-in slide-in-from-top-8 duration-700">
-                    <button
-                        onClick={onBack}
-                        className="inline-flex items-center gap-2 text-slate-500 hover:text-white mb-10 transition-colors font-bold uppercase tracking-widest text-[10px]"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Adjust Selection
-                    </button>
+        <div className="flex-1 flex items-center justify-center px-4 pt-12 pb-16 relative z-10">
+            {/* Glow backdrop */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px]" />
+                <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-purple-600/8 rounded-full blur-[100px]" />
+            </div>
 
-                    <h1 className="text-2xl md:text-3xl font-black text-white mb-3 tracking-tighter">
-                        Setup Your <span className={`bg-gradient-to-r ${currentCat.color} bg-clip-text text-transparent`}>Session</span>
+            <div className="w-full max-w-2xl relative">
+                {/* Header */}
+                <div className="text-center mb-10 animate-in fade-in slide-in-from-top-6 duration-700">
+
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white mb-3">
+                        Tell us about the{' '}
+                        <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                            role
+                        </span>
                     </h1>
-                    <p className="text-slate-400 text-sm max-w-xl mx-auto font-medium">
-                        {currentCat.description}
+                    <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
+                        The more context you give, the more targeted your AI interviewer will be. Your answers will be
+                        voice-first — hands-free and natural.
                     </p>
                 </div>
 
-                {/* Configuration Cards */}
-                <div className="space-y-8">
-                    {/* Experience Level */}
-                    <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center">
-                                <Sparkles className="w-6 h-6 text-purple-400" />
-                            </div>
+                {/* Form card */}
+                <form
+                    onSubmit={handleSubmit}
+                    className="bg-white/[0.03] backdrop-blur-2xl border border-white/8 rounded-[2rem] p-8 md:p-10 shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100"
+                >
+                    <div className="space-y-6">
+                        {/* Row 1: Job Title + Company */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            {/* Job Title */}
                             <div>
-                                <h2 className="text-xl font-black text-white tracking-tight">Experience Level</h2>
-                                <p className="text-slate-500 text-sm">Tailors the question depth and complexity</p>
+                                <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                                    <Briefcase className="w-3 h-3 text-cyan-400" />
+                                    Job Title <span className="text-red-400">*</span>
+                                </label>
+                                <input
+                                    id="interview-job-title"
+                                    type="text"
+                                    placeholder="e.g. Senior Backend Engineer"
+                                    value={form.jobTitle}
+                                    onChange={(e) => handleChange('jobTitle', e.target.value)}
+                                    onFocus={() => setFocused('jobTitle')}
+                                    onBlur={() => setFocused(null)}
+                                    className={fieldClass('jobTitle')}
+                                    autoFocus
+                                />
+                                {errors.jobTitle && (
+                                    <p className="mt-1.5 text-xs text-red-400 font-semibold">{errors.jobTitle}</p>
+                                )}
                             </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {difficulties.map((diff) => (
-                                <button
-                                    key={diff.id}
-                                    onClick={() => setConfig(prev => ({ ...prev, difficulty: diff.id }))}
-                                    className={`relative p-6 rounded-3xl border-2 transition-all duration-300 text-left ${config.difficulty === diff.id
-                                        ? `border-${diff.color}-500 bg-${diff.color}-500/10`
-                                        : 'border-white/5 hover:border-white/20 bg-white/5'
-                                        }`}
-                                >
-                                    <h3 className={`font-black text-lg mb-1 ${config.difficulty === diff.id ? `text-${diff.color}-400` : 'text-white'}`}>
-                                        {diff.label}
-                                    </h3>
-                                    <p className="text-slate-400 text-xs leading-relaxed">{diff.desc}</p>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Target Environment */}
-                    <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '100ms' }}>
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 bg-cyan-500/20 rounded-2xl flex items-center justify-center">
-                                <Building2 className="w-6 h-6 text-cyan-400" />
-                            </div>
+                            {/* Company Name */}
                             <div>
-                                <h2 className="text-xl font-black text-white tracking-tight">Work Environment</h2>
-                                <p className="text-slate-500 text-sm">Adjusts the interview style and cultural context</p>
+                                <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                                    <Building2 className="w-3 h-3 text-purple-400" />
+                                    Company <span className="text-red-400">*</span>
+                                </label>
+                                <input
+                                    id="interview-company"
+                                    type="text"
+                                    placeholder="e.g. Google, Infosys, Startup…"
+                                    value={form.company}
+                                    onChange={(e) => handleChange('company', e.target.value)}
+                                    onFocus={() => setFocused('company')}
+                                    onBlur={() => setFocused(null)}
+                                    className={fieldClass('company')}
+                                />
+                                {errors.company && (
+                                    <p className="mt-1.5 text-xs text-red-400 font-semibold">{errors.company}</p>
+                                )}
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {companies.map((company) => (
-                                <button
-                                    key={company.id}
-                                    onClick={() => setConfig(prev => ({ ...prev, companyTarget: company.id }))}
-                                    className={`relative p-6 rounded-3xl border-2 transition-all duration-300 text-center flex flex-col items-center gap-3 ${config.companyTarget === company.id
-                                        ? 'border-cyan-500 bg-cyan-500/10'
-                                        : 'border-white/5 hover:border-white/20 bg-white/5'
-                                        }`}
+                        {/* Experience Level */}
+                        <div>
+                            <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                                <User className="w-3 h-3 text-green-400" />
+                                Experience Level
+                            </label>
+                            <div className="relative">
+                                <select
+                                    id="interview-experience"
+                                    value={form.experienceLevel}
+                                    onChange={(e) => handleChange('experienceLevel', e.target.value)}
+                                    onFocus={() => setFocused('experienceLevel')}
+                                    onBlur={() => setFocused(null)}
+                                    className={[
+                                        fieldClass('experienceLevel'),
+                                        'appearance-none cursor-pointer pr-10',
+                                    ].join(' ')}
                                 >
-                                    <div className="text-4xl mb-1">{company.icon}</div>
-                                    <h3 className={`font-bold text-sm leading-tight ${config.companyTarget === company.id ? 'text-cyan-400' : 'text-white'}`}>
-                                        {company.label}
-                                    </h3>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Audio Configuration */}
-                    <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 bg-pink-500/20 rounded-2xl flex items-center justify-center">
-                                <Volume2 className="w-6 h-6 text-pink-400" />
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-black text-white tracking-tight">AI Persona Voice</h2>
-                                <p className="text-slate-500 text-sm">Select the voice that best fits your practice comfort</p>
+                                    {EXPERIENCE_LEVELS.map((lvl) => (
+                                        <option
+                                            key={lvl.value}
+                                            value={lvl.value}
+                                            className="bg-[#0f172a] text-white"
+                                        >
+                                            {lvl.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 rotate-90 pointer-events-none" />
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-                            {availableVoices.map((voice) => (
-                                <div
-                                    key={voice.voiceURI}
-                                    className={`p-5 rounded-3xl border-2 transition-all duration-300 flex items-center justify-between group ${config.voiceURI === voice.voiceURI
-                                        ? 'border-pink-500 bg-pink-500/10'
-                                        : 'border-white/5 hover:border-white/20 bg-white/5'
-                                        }`}
-                                >
-                                    <button
-                                        onClick={() => setConfig(prev => ({ ...prev, voiceURI: voice.voiceURI }))}
-                                        className="flex-1 text-left mr-4"
-                                    >
-                                        <h3 className={`font-bold text-base truncate ${config.voiceURI === voice.voiceURI ? 'text-pink-400' : 'text-white'}`}>
-                                            {voice.name.split(' ')[1] || voice.name}
-                                        </h3>
-                                        <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">{voice.lang}</p>
-                                    </button>
-                                    <button
-                                        onClick={() => handleTestVoice(voice.voiceURI)}
-                                        className="p-3 rounded-xl bg-pink-500/20 text-pink-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-pink-500/40"
-                                    >
-                                        <Play className="w-4 h-4 fill-current" />
-                                    </button>
-                                </div>
-                            ))}
+                        {/* Job Description */}
+                        <div>
+                            <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                                <BookOpen className="w-3 h-3 text-amber-400" />
+                                Job Description <span className="text-red-400">*</span>
+                            </label>
+                            <textarea
+                                id="interview-job-description"
+                                rows={6}
+                                placeholder="Paste the full job description here. The AI will tailor every question to this specific role and company culture."
+                                value={form.jobDescription}
+                                onChange={(e) => handleChange('jobDescription', e.target.value)}
+                                onFocus={() => setFocused('jobDescription')}
+                                onBlur={() => setFocused(null)}
+                                className={[fieldClass('jobDescription'), 'resize-none leading-relaxed'].join(' ')}
+                            />
+                            {errors.jobDescription && (
+                                <p className="mt-1.5 text-xs text-red-400 font-semibold">{errors.jobDescription}</p>
+                            )}
                         </div>
-                    </div>
-                </div>
 
-                {/* Final Launch Button */}
-                <div className="mt-16 text-center">
-                    <button
-                        onClick={handleStart}
-                        className="group relative inline-flex items-center gap-4 px-16 py-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black uppercase tracking-[0.2em] text-sm rounded-full hover:scale-105 transition-all shadow-2xl hover:shadow-cyan-500/40"
-                    >
-                        Initiate Session
-                        <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                        {/* Subtle glow effect */}
-                        <div className="absolute inset-0 bg-white/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    </button>
-                    <p className="mt-6 text-slate-500 text-sm font-medium">Ready when you are. AI is preparing your tailored questions.</p>
-                </div>
-            </main>
+                        {/* Tips callout */}
+                        <div className="flex items-start gap-3 bg-cyan-500/5 border border-cyan-500/15 rounded-xl p-4">
+                            <Sparkles className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                                <span className="text-cyan-300 font-bold">Pro tip:</span> The interview is voice-first.
+                                Speak your answers naturally — the AI listens, detects 2.5 s of silence, and
+                                automatically moves on. You can also type at any time.
+                            </p>
+                        </div>
+
+                        {/* Submit */}
+                        <button
+                            id="interview-setup-submit"
+                            type="submit"
+                            className="w-full group relative overflow-hidden flex items-center justify-center gap-2.5 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-sm rounded-xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
+                        >
+                            <span className="relative z-10">Start My Interview</span>
+                            <ChevronRight className="relative z-10 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            {/* shine */}
+                            <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 ease-in-out pointer-events-none" />
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }

@@ -53,11 +53,11 @@ export default function SkillGapWidget({ profile, roadmap }) {
         );
 
         if (!response.ok) throw new Error('Skill gap analysis failed');
-        
+
         const data = await response.json();
         const jsonString = data.candidates[0].content.parts[0].text;
         const result = JSON.parse(jsonString);
-        
+
         setSkillGaps(result.skill_gaps || []);
       } catch (error) {
         console.error("Error analyzing skill gaps:", error);
@@ -84,7 +84,7 @@ export default function SkillGapWidget({ profile, roadmap }) {
   }
 
   if (skillGaps.length === 0) {
-    return null; 
+    return null;
   }
 
   return (

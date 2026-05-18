@@ -7,7 +7,6 @@ import ResumeBuilder from "./pages/ResumeBuilder.jsx";
 import SignIn from "./pages/SignIn.jsx";
 import ResumeAnalyzer from "./pages/ResumeAnalyzer.jsx";
 import CareerExplorer from "./pages/CareerExplorer.jsx";
-import AboutUs from "./pages/AboutUs.jsx";
 import ResumePreview from "./pages/ResumePreview.jsx";
 import InterviewPrep from "./pages/MockInterview.jsx";
 import InterviewHistory from "./pages/InterviewHistory.jsx";
@@ -37,7 +36,6 @@ export const routes = [
 			{ path: "career-explorer", element: <CareerExplorer /> },
 			// { path: "career-compass", element: <CareerCompass /> },
 			// { path: "strategies", element: <Strategies /> },
-			{ path: "about-us", element: <AboutUs /> },
 			{ path: "job-details/:jobTitle", element: <JobDetails /> },
 			{ path: "linkedin-optimizer", element: <LinkedInOptimizer /> },
 			{ path: "job-explorer", element: <JobExplorer /> },

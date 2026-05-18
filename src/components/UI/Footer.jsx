@@ -53,7 +53,6 @@ export default function Footer() {
             <div className="text-center">
               <h3 className="font-semibold tracking-wider uppercase">Quick Links</h3>
               <div className="mt-4 flex flex-col space-y-2 text-sm">
-                <Link to="/about-us" className="text-gray-400 hover:text-white transition-colors">About Us</Link>
                 <button onClick={() => setIsModalOpen(true)} className="text-gray-400 hover:text-white transition-colors">Contact Us</button>
               </div>
             </div>

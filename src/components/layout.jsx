@@ -149,7 +149,6 @@ export default function Layout() {
   const navigationItems = isLandingPage
     ? [
       { title: "Ecosystem", to: "#ecosystem", icon: Sparkles },
-      { title: "About", to: "#team", icon: Info },
       { title: "FAQ", to: "#faq", icon: HelpCircle },
     ]
     : [
@@ -270,8 +269,6 @@ export default function Layout() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <div className="p-2">
-                        <DropdownMenuLabel className="p-0 text-[10px] uppercase tracking-tighter opacity-50">{user?.email}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={() => navigate("/profile")}>
                           <UserIcon className="mr-2 h-4 w-4 text-emerald-400" /> Profile
                         </DropdownMenuItem>

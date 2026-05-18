@@ -1,410 +1,456 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, MicOff, Send, Clock, X, Volume2, VolumeX, MessageSquare, Sparkles, Brain, Target, Zap, AlertCircle, User } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import RealtimeAvatar from './RealtimeAvatar';
-import CodeEditor from './CodeEditor';
-import InterviewAntiCheat from './InterviewAntiCheat';
-import speechService from '../../services/ai/speechService';
-import openRouterService from '../../services/ai/openRouterService';
-import geminiService from '../../services/ai/geminiService';
-import interviewService from '../../services/ai/interviewService';
-import { getRandomFallbackQuestion } from '../../data/interviewData';
+import {
+    Mic, MicOff, Send, Square, Loader2, Volume2, VolumeX,
+    ChevronLeft, Sparkles, User, Bot
+} from 'lucide-react';
+import { generateAIResponse } from '../../services/ai/openRouterService';
+import {
+    unlockAudio,
+    speak,
+    stopSpeaking,
+    startListening,
+    stopListening,
+    isSpeechRecognitionSupported,
+} from '../../services/ai/speechService';
 
-export default function InterviewSession({
-    interviewType,
-    domain = '',
-    config = null,
-    onEnd,
-    onResults
-}) {
-    const difficulty = config?.difficulty || 'intermediate';
-    const companyTarget = config?.companyTarget || 'product';
-    const configDuration = config?.duration || 30;
-    const techStack = config?.techStack || 'javascript';
+// ─── Status enum ─────────────────────────────────────────────────────────────
+const STATUS = {
+    IDLE: 'idle',           // Before "Start Interview" is clicked
+    LOADING: 'loading',     // Waiting for AI response
+    SPEAKING: 'speaking',   // AI is speaking via TTS
+    LISTENING: 'listening', // Mic is open, STT active
+    READY: 'ready',         // Mic off, user can type / click
+};
 
-    const [currentStep, setCurrentStep] = useState('loading');
-    const [conversation, setConversation] = useState([]);
-    const [userInput, setUserInput] = useState('');
-    const [currentQuestion, setCurrentQuestion] = useState('');
-    const [error, setError] = useState(null);
+// ─── Build the system prompt from the setup config ───────────────────────────
+function buildSystemPrompt({ jobTitle, company, experienceLevel, jobDescription }) {
+    return `You are an expert technical and behavioral interviewer conducting a real mock interview.
 
-    const [problemResults, setProblemResults] = useState([]);
-    const [patternsAsked, setPatternsAsked] = useState([]);
-    const [strengths, setStrengths] = useState([]);
-    const [improvements, setImprovements] = useState([]);
-    const [overallScore, setOverallScore] = useState(0);
-    const [questionNumber, setQuestionNumber] = useState(0);
-    const [usedFallbackQuestions, setUsedFallbackQuestions] = useState([]);
+Role being interviewed for: ${jobTitle}
+Company: ${company}
+Candidate experience level: ${experienceLevel}
+Job description:
+"""
+${jobDescription}
+"""
 
-    const [timeRemaining, setTimeRemaining] = useState(0);
-    const [totalTimeUsed, setTotalTimeUsed] = useState(0);
-    const timerRef = useRef(null);
+Instructions:
+- Ask ONE focused interview question at a time. Never ask multiple questions in the same message.
+- Start with a warm, brief greeting and then ask your first question directly.
+- After the candidate answers, acknowledge briefly (1 sentence max), then ask the next question.
+- Mix behavioral (STAR-method) and role-specific technical questions relevant to the JD above.
+- Keep your messages concise and conversational — this is a voice interview.
+- Do NOT use markdown headers, bullet points, or formatting. Plain text only.
+- After roughly 8–10 questions, conclude the interview warmly and provide 2–3 sentences of constructive feedback.`;
+}
+
+// ─── Message bubble ───────────────────────────────────────────────────────────
+function ChatBubble({ message }) {
+    const isAI = message.role === 'ai';
+    return (
+        <div className={`flex items-end gap-3 ${isAI ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-3 duration-400`}>
+            {isAI && (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/20">
+                    <Bot className="w-4 h-4 text-white" />
+                </div>
+            )}
+            <div
+                className={[
+                    'max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed',
+                    isAI
+                        ? 'bg-white/8 border border-white/10 text-slate-100 rounded-bl-sm'
+                        : 'bg-gradient-to-br from-cyan-600 to-blue-700 text-white rounded-br-sm shadow-lg shadow-cyan-500/10',
+                ].join(' ')}
+            >
+                {message.content}
+            </div>
+            {!isAI && (
+                <div className="w-8 h-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-slate-300" />
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Animated mic orb ────────────────────────────────────────────────────────
+function MicOrb() {
+    return (
+        <div className="relative flex items-center justify-center w-6 h-6">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60 animate-ping" />
+            <Mic className="relative w-4 h-4 text-white" />
+        </div>
+    );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function InterviewSession({ config, onEnd }) {
+    const systemPrompt = buildSystemPrompt(config);
+
+    const [status, setStatus] = useState(STATUS.IDLE);
+    const [messages, setMessages] = useState([]);
+    const [inputText, setInputText] = useState('');
+    const [isMuted, setIsMuted] = useState(false);
+
+    // conversationHistory holds the raw [{role, content}] array we send to AI.
+    const conversationHistory = useRef([]);
     const chatEndRef = useRef(null);
-    const startedRef = useRef(false);
-    const sessionEndedRef = useRef(false);
-    const processingRef = useRef(false);
-    const followUpCountRef = useRef(0);
-    const timeoutsRef = useRef([]);
-    const conversationRef = useRef([]);
+    const inputRef = useRef(null);
 
-    const [isSpeaking, setIsSpeaking] = useState(false);
-    const [isListening, setIsListening] = useState(false);
-    const [isThinking, setIsThinking] = useState(false);
-    const [soundEnabled, setSoundEnabled] = useState(true);
-    const [avatarEmotion, setAvatarEmotion] = useState('neutral');
-    const [isCodingQuestion, setIsCodingQuestion] = useState(false);
-    const [showCodeEditor, setShowCodeEditor] = useState(false);
-    const [antiCheatActive, setAntiCheatActive] = useState(false);
-
+    // ── Auto-scroll chat ──────────────────────────────────────────────────────
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [conversation, isThinking]);
+    }, [messages]);
 
+    // ── Cleanup on unmount ────────────────────────────────────────────────────
     useEffect(() => {
-        if (startedRef.current) return;
-        startedRef.current = true;
-        if (config?.voiceURI) speechService.setVoice(config.voiceURI);
-        speechService.setSpeakingCallback(setIsSpeaking);
-        startInterview();
-
         return () => {
-            sessionEndedRef.current = true;
-            timeoutsRef.current.forEach(clearTimeout);
-            speechService.stopSpeaking();
-            speechService.stopListening();
-            if (timerRef.current) clearInterval(timerRef.current);
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            stopSpeaking();
+            stopListening();
         };
     }, []);
 
-    const startInterview = async () => {
-        try {
-            setCurrentStep('loading');
-            setIsThinking(true);
-            try {
-                if (!document.fullscreenElement) {
-                    await document.documentElement.requestFullscreen().catch(() => { });
-                }
-                setAntiCheatActive(true);
-            } catch (fsErr) {
-                setAntiCheatActive(true);
+    // ── Append a message to chat ──────────────────────────────────────────────
+    const addMessage = useCallback((role, content) => {
+        setMessages((prev) => [...prev, { role, content, id: Date.now() + Math.random() }]);
+    }, []);
+
+    // ── Speak AI text then transition to READY ────────────────────────────────
+    const speakAIMessage = useCallback(
+        (text) => {
+            if (isMuted) {
+                setStatus(STATUS.READY);
+                return;
+            }
+            setStatus(STATUS.SPEAKING);
+            speak(text, () => {
+                setStatus(STATUS.READY);
+            });
+        },
+        [isMuted]
+    );
+
+    // ── Fetch AI response and handle the reply ────────────────────────────────
+    const fetchAIResponse = useCallback(
+        async (userMessageContent) => {
+            setStatus(STATUS.LOADING);
+
+            // Build the user turn for history (if there is one)
+            if (userMessageContent) {
+                conversationHistory.current.push({ role: 'user', content: userMessageContent });
             }
 
-            openRouterService.resetSession();
-            let introMessage;
+            // Build a single prompt from the full history for openRouterService
+            const conversationPrompt = conversationHistory.current
+                .map((m) => `${m.role === 'user' ? 'Candidate' : 'Interviewer'}: ${m.content}`)
+                .join('\n\n');
+
             try {
-                introMessage = await openRouterService.generateIntro(interviewType, domain, { difficulty, companyTarget });
+                const aiText = await generateAIResponse(conversationPrompt, systemPrompt, 'interview');
+                conversationHistory.current.push({ role: 'assistant', content: aiText });
+                addMessage('ai', aiText);
+                speakAIMessage(aiText);
             } catch (err) {
-                introMessage = `Welcome to your ${domain || interviewType} interview! Let's begin.`;
+                console.error('[InterviewSession] AI error:', err);
+                const errorMsg = 'I encountered a connection issue. Please check your API key and try again.';
+                addMessage('ai', errorMsg);
+                speakAIMessage(errorMsg);
             }
+        },
+        [systemPrompt, addMessage, speakAIMessage]
+    );
 
-            setCurrentStep('intro');
-            setIsThinking(false);
-            if (sessionEndedRef.current) return;
-            addAIMessage(introMessage);
-            if (soundEnabled && !sessionEndedRef.current) await speechService.speak(introMessage);
-            if (sessionEndedRef.current) return;
-
-            setTimeRemaining(configDuration * 60);
-            const timeoutId = setTimeout(() => {
-                if (!sessionEndedRef.current) askNextQuestion();
-            }, 2000);
-            timeoutsRef.current.push(timeoutId);
-        } catch (err) {
-            setIsThinking(false);
-            setError(`Failed to start: ${err.message}`);
-        }
+    // ── "Start Interview" button handler ──────────────────────────────────────
+    const handleStart = () => {
+        // THIS MUST be called synchronously in the click handler to unlock audio.
+        unlockAudio();
+        fetchAIResponse(null); // First turn – no user message yet
     };
 
-    const askNextQuestion = async () => {
-        try {
-            setIsThinking(true);
-            setQuestionNumber(prev => prev + 1);
-            followUpCountRef.current = 0;
+    // ── Submit a user answer ──────────────────────────────────────────────────
+    const handleSubmit = useCallback(
+        (text) => {
+            const trimmed = (text || inputText).trim();
+            if (!trimmed || status === STATUS.LOADING || status === STATUS.SPEAKING) return;
 
-            let questionText = "";
-            try {
-                const previousQuestions = conversation.filter(m => m.role === 'ai').map(m => m.text);
-                questionText = await geminiService.generateInterviewQuestions(interviewType, domain, previousQuestions, config);
-            } catch (err) {
-                questionText = getRandomFallbackQuestion(interviewType, usedFallbackQuestions);
-                setUsedFallbackQuestions(prev => [...prev, questionText]);
-            }
+            stopListening();
+            addMessage('user', trimmed);
+            setInputText('');
+            fetchAIResponse(trimmed);
+        },
+        [inputText, status, addMessage, fetchAIResponse]
+    );
 
-            if (sessionEndedRef.current) return;
-
-            // Only show coding for technical domains or explicitly requested
-            let isCoding = false;
-            const technicalDomains = ['Software Engineering', 'Data Science', 'Programming', 'Web Development'];
-            const isTechnicalDomain = technicalDomains.includes(domain);
-
-            if (questionText.includes('[TYPE:CODING]')) {
-                isCoding = true;
-                questionText = questionText.replace('[TYPE:CODING]', '');
-            } else if (questionText.includes('[TYPE:CONCEPT]')) {
-                isCoding = false;
-                questionText = questionText.replace('[TYPE:CONCEPT]', '');
-            } else if (isTechnicalDomain && (interviewType === 'coding' || interviewType === 'domain')) {
-                // If it's a technical domain but not explicitly marked, assume concept unless it looks like code
-                isCoding = questionText.toLowerCase().includes('write a') || questionText.toLowerCase().includes('implement');
-            }
-            setIsCodingQuestion(isCoding);
-            setShowCodeEditor(isCoding);
-
-            const patternMatch = questionText.match(/\[PATTERN:(.*?)\]/i);
-            if (patternMatch) {
-                setPatternsAsked(prev => [...prev, { pattern: patternMatch[1], score: 0, solved: false }]);
-                questionText = questionText.replace(patternMatch[0], '');
-            }
-
-            let cleanQuestion = interviewService.cleanQuestionText(questionText);
-            setIsThinking(false);
-            setCurrentQuestion(cleanQuestion);
-            addAIMessage(cleanQuestion);
-            setCurrentStep(isCoding ? 'coding' : 'question');
-            if (soundEnabled && !sessionEndedRef.current) await speechService.speak(cleanQuestion);
-        } catch (err) {
-            setError('Failed to generate question.');
-            setIsThinking(false);
-        }
-    };
-
-    const addAIMessage = (text) => {
-        const newMsg = { role: 'ai', text, timestamp: Date.now() };
-        conversationRef.current = [...conversationRef.current, newMsg];
-        setConversation(prev => [...prev, newMsg]);
-    };
-
-    const addUserMessage = (text) => {
-        const newMsg = { role: 'user', text, timestamp: Date.now() };
-        conversationRef.current = [...conversationRef.current, newMsg];
-        setConversation(prev => [...prev, newMsg]);
-    };
-
-    const handleSendMessage = async () => {
-        if (!userInput.trim() || isThinking || processingRef.current) return;
-        processingRef.current = true;
-        const message = userInput;
-        setUserInput('');
-        addUserMessage(message);
-
-        try {
-            setIsThinking(true);
-            setAvatarEmotion('curious');
-            const evaluation = await geminiService.evaluateAnswer(currentQuestion, message, interviewType);
-
-            setStrengths(prev => [...new Set([...prev, ...(evaluation.strengths || [])])]);
-            setImprovements(prev => [...new Set([...prev, ...(evaluation.improvements || [])])]);
-            setOverallScore(prev => prev === 0 ? evaluation.score : Math.round((prev + evaluation.score) / 2));
-            setIsThinking(false);
-
-            if (evaluation.score >= 80) setAvatarEmotion('happy');
-            else if (evaluation.score < 50) setAvatarEmotion('concerned');
-
-            let aiResponse = evaluation.feedback || '';
-            if (evaluation.followUp && followUpCountRef.current < 2) {
-                aiResponse += ' ' + evaluation.followUp;
-                followUpCountRef.current += 1;
-                setCurrentQuestion(evaluation.followUp);
+    // ── Mic toggle ────────────────────────────────────────────────────────────
+    const handleMicToggle = useCallback(() => {
+        if (status === STATUS.LISTENING) {
+            stopListening();
+            const current = inputText.trim();
+            if (current) {
+                handleSubmit(current);
             } else {
-                aiResponse += " Good! Let's move on.";
-                setTimeout(() => askNextQuestion(), 3000);
+                setStatus(STATUS.READY);
             }
-
-            addAIMessage(aiResponse);
-            if (soundEnabled && !sessionEndedRef.current) await speechService.speak(aiResponse);
-        } catch (err) {
-            setIsThinking(false);
-            askNextQuestion();
-        } finally {
-            processingRef.current = false;
-        }
-    };
-
-    const handleCodeSubmit = async (code, language) => {
-        if (isThinking || processingRef.current) return;
-        processingRef.current = true;
-        setIsThinking(true);
-        addUserMessage(`[Code Submitted: ${language}]`);
-
-        try {
-            const evaluation = await geminiService.evaluateCode(currentQuestion, code, language);
-            setProblemResults(prev => [...prev, { title: 'Coding Problem', solved: evaluation.score >= 70, score: evaluation.score }]);
-            setOverallScore(prev => prev === 0 ? evaluation.score : Math.round((prev + evaluation.score) / 2));
-            setIsThinking(false);
-
-            addAIMessage(evaluation.feedback);
-            if (soundEnabled && !sessionEndedRef.current) await speechService.speak(evaluation.feedback);
-            setTimeout(() => askNextQuestion(), 3000);
-        } catch (err) {
-            setIsThinking(false);
-            askNextQuestion();
-        } finally {
-            processingRef.current = false;
-        }
-    };
-
-    const endInterview = async () => {
-        sessionEndedRef.current = true;
-        timeoutsRef.current.forEach(clearTimeout);
-        speechService.stopSpeaking();
-        speechService.stopListening();
-        setCurrentStep('complete');
-        if (timerRef.current) clearInterval(timerRef.current);
-
-        const results = {
-            overallScore,
-            scores: { problemSolving: overallScore, communication: Math.min(100, overallScore + 5), confidence: overallScore, accuracy: overallScore },
-            problems: problemResults,
-            patternsAsked,
-            questionsAttempted: conversationRef.current.filter(m => m.role === 'user').length,
-            questionsTotal: conversationRef.current.filter(m => m.role === 'ai').length,
-            timeTaken: totalTimeUsed,
-            strengths,
-            weakPoints: improvements,
-            suggestions: ['Practice more problems', 'Focus on edge cases'],
-            conversation: conversationRef.current
-        };
-
-        try {
-            await interviewService.saveInterview({
-                interviewType, domain, config: { difficulty, companyTarget, techStack, duration: configDuration },
-                ...results
-            });
-        } catch (e) {
-            console.error('Failed to save interview:', e);
+            return;
         }
 
-        if (onResults) onResults(results);
-    };
+        if (status !== STATUS.READY) return;
 
-    const handleCheated = useCallback(async () => {
-        sessionEndedRef.current = true;
-        setAntiCheatActive(false);
-        speechService.stopSpeaking();
-        speechService.stopListening();
-        if (timerRef.current) clearInterval(timerRef.current);
-
-        try {
-            const result = await interviewService.reportCheating({
-                interviewType,
-                domain,
-                config: { difficulty, companyTarget, techStack, duration: configDuration },
-                conversation: conversationRef.current,
-                timeTaken: totalTimeUsed,
-                questionsAttempted: conversationRef.current.filter(m => m.role === 'user').length
-            });
-            return result.data;
-        } catch (err) {
-            console.error('Failed to report cheating:', err);
-            return { penaltyApplied: 100 };
-        }
-    }, [interviewType, customRole, difficulty, companyTarget, techStack, configDuration, totalTimeUsed]);
-
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    if (error) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
-                <div className="bg-white/5 border border-red-500/30 p-8 rounded-3xl text-center">
-                    <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold text-white mb-2">Error</h2>
-                    <p className="text-slate-400 mb-6">{error}</p>
-                    <button onClick={onEnd} className="px-6 py-2 bg-slate-700 text-white rounded-xl">Go Back</button>
-                </div>
-            </div>
+        setInputText('');
+        const supported = startListening(
+            // onResult – update input live
+            (transcript) => {
+                setInputText(transcript);
+            },
+            // onSilence – auto-submit
+            (finalTranscript) => {
+                setStatus(STATUS.READY); // silence cb fires after stopListening inside service
+                if (finalTranscript.trim()) {
+                    addMessage('user', finalTranscript.trim());
+                    setInputText('');
+                    fetchAIResponse(finalTranscript.trim());
+                } else {
+                    setStatus(STATUS.READY);
+                }
+            }
         );
-    }
+
+        if (supported) setStatus(STATUS.LISTENING);
+    }, [status, inputText, handleSubmit, addMessage, fetchAIResponse]);
+
+    // ── Mute / unmute ─────────────────────────────────────────────────────────
+    const handleMuteToggle = () => {
+        if (!isMuted) {
+            stopSpeaking();
+            setIsMuted(true);
+            if (status === STATUS.SPEAKING) setStatus(STATUS.READY);
+        } else {
+            setIsMuted(false);
+        }
+    };
+
+    // ── Keyboard send ─────────────────────────────────────────────────────────
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit();
+        }
+    };
+
+    // ── Derived booleans ──────────────────────────────────────────────────────
+    const isInputDisabled = status === STATUS.IDLE || status === STATUS.LOADING || status === STATUS.SPEAKING;
+    const isMicDisabled = status === STATUS.IDLE || status === STATUS.LOADING || status === STATUS.SPEAKING;
+    const micSupported = isSpeechRecognitionSupported();
 
     return (
-        <div className="min-h-screen bg-[#0a0a0f] flex flex-col relative overflow-hidden">
-            <InterviewAntiCheat isActive={antiCheatActive} onCheated={handleCheated} onWarning={() => toast.error('Stay in fullscreen!')} />
-
-            <header className="px-6 py-4 border-b border-white/5 flex items-center justify-between relative z-50">
-                <div className="flex items-center gap-4">
-                    <div className={`px-4 py-2 rounded-xl border ${timeRemaining < 300 ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-white/5 border-white/10 text-white'}`}>
-                        <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
-                            <span className="font-mono font-bold">{formatTime(timeRemaining)}</span>
+        <div className="fixed inset-0 flex flex-col bg-slate-950/95 backdrop-blur-3xl text-white z-20">
+            {/* ── TOP BAR ──────────────────────────────────────────────────── */}
+            <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-white/8 bg-black/30 backdrop-blur-xl flex-shrink-0">
+                <div className="flex items-center gap-3">
+                    <button
+                        id="interview-session-back"
+                        onClick={() => {
+                            stopSpeaking();
+                            stopListening();
+                            onEnd();
+                        }}
+                        className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-xs font-bold"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                        Exit
+                    </button>
+                    <div className="w-px h-4 bg-white/10" />
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                            <Sparkles className="w-3 h-3 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-black text-white leading-none">{config.jobTitle}</p>
+                            <p className="text-[10px] text-slate-500 leading-none mt-0.5">{config.company}</p>
                         </div>
                     </div>
                 </div>
+
                 <div className="flex items-center gap-3">
-                    <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-2 border border-white/10 rounded-xl text-white">
-                        {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                    {/* Status pill */}
+                    <div className={[
+                        'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300',
+                        status === STATUS.IDLE && 'bg-white/5 border-white/10 text-slate-500',
+                        status === STATUS.LOADING && 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+                        status === STATUS.SPEAKING && 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+                        status === STATUS.LISTENING && 'bg-red-500/10 border-red-500/20 text-red-400',
+                        status === STATUS.READY && 'bg-green-500/10 border-green-500/20 text-green-400',
+                    ].filter(Boolean).join(' ')}>
+                        <span className={[
+                            'w-1.5 h-1.5 rounded-full',
+                            status === STATUS.LOADING && 'bg-amber-400 animate-pulse',
+                            status === STATUS.SPEAKING && 'bg-blue-400 animate-pulse',
+                            status === STATUS.LISTENING && 'bg-red-400 animate-ping',
+                            status === STATUS.READY && 'bg-green-400',
+                            status === STATUS.IDLE && 'bg-slate-600',
+                        ].filter(Boolean).join(' ')} />
+                        {status === STATUS.IDLE && 'Ready'}
+                        {status === STATUS.LOADING && 'Thinking…'}
+                        {status === STATUS.SPEAKING && 'Speaking'}
+                        {status === STATUS.LISTENING && 'Listening'}
+                        {status === STATUS.READY && 'Your Turn'}
+                    </div>
+
+                    {/* Mute toggle */}
+                    <button
+                        id="interview-mute-toggle"
+                        onClick={handleMuteToggle}
+                        title={isMuted ? 'Unmute AI voice' : 'Mute AI voice'}
+                        className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center transition-colors"
+                    >
+                        {isMuted
+                            ? <VolumeX className="w-4 h-4 text-slate-500" />
+                            : <Volume2 className="w-4 h-4 text-cyan-400" />}
                     </button>
-                    <button onClick={endInterview} className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl font-bold">End Session</button>
                 </div>
             </header>
 
-            <main className="flex-1 p-6 max-w-7xl mx-auto w-full flex flex-col gap-6 overflow-hidden relative z-10">
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                    <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center min-h-[300px]">
-                        <RealtimeAvatar isSpeaking={isSpeaking} isThinking={isThinking} isListening={isListening} emotion={avatarEmotion} />
-                    </div>
-                    <div className="lg:col-span-3 bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center">
-                        {isListening ? (
-                            <div className="flex items-end gap-1 h-12">
-                                {[...Array(8)].map((_, i) => <div key={i} className="w-1.5 bg-cyan-500 rounded-full animate-bounce" style={{ height: `${30 + Math.random() * 70}%`, animationDelay: `${i * 100}ms` }} />)}
+            {/* ── CHAT AREA ─────────────────────────────────────────────────── */}
+            <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+
+                {/* START screen */}
+                {status === STATUS.IDLE && messages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full min-h-[300px] gap-6 animate-in fade-in duration-700">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-full blur-3xl scale-150" />
+                            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-cyan-500/30">
+                                <Bot className="w-10 h-10 text-white" />
                             </div>
-                        ) : <Mic className="w-12 h-12 text-slate-500" />}
-                        <button onClick={() => setIsListening(!isListening)} className={`mt-6 w-16 h-16 rounded-full flex items-center justify-center ${isListening ? 'bg-red-500 animate-pulse' : 'bg-slate-700'}`}>
-                            {isListening ? <MicOff className="w-8 h-8 text-white" /> : <Mic className="w-8 h-8 text-white" />}
+                        </div>
+                        <div className="text-center">
+                            <h2 className="text-xl font-black text-white mb-2">Ready when you are</h2>
+                            <p className="text-slate-400 text-sm max-w-sm">
+                                Your AI interviewer is prepared. Click the button below — it unlocks audio and begins your session instantly.
+                            </p>
+                        </div>
+                        <button
+                            id="interview-start-btn"
+                            onClick={handleStart}
+                            className="group flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-sm rounded-xl shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300 hover:scale-105 active:scale-95"
+                        >
+                            <Sparkles className="w-4 h-4" />
+                            Start Interview
                         </button>
-                        <p className="mt-4 text-slate-500 text-sm">{isListening ? 'Listening...' : 'Click to speak'}</p>
-                    </div>
-                </div>
-
-                <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl flex flex-col overflow-hidden min-h-[300px]">
-                    <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 uppercase">Live Transcript</span>
-                        {isCodingQuestion && (
-                            <button onClick={() => setShowCodeEditor(!showCodeEditor)} className="text-xs px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full border border-cyan-500/30">
-                                {showCodeEditor ? 'Close Editor' : 'Open Editor'}
-                            </button>
-                        )}
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-                        {conversation.map((msg, i) => (
-                            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-cyan-500 text-white rounded-tr-none' : 'bg-white/10 text-slate-200 rounded-tl-none'}`}>
-                                    <p className="text-sm">{msg.text}</p>
-                                </div>
-                            </div>
-                        ))}
-                        {isThinking && <div className="text-cyan-400 text-xs animate-pulse">AI is thinking...</div>}
-                        <div ref={chatEndRef} />
-                    </div>
-                    <div className="p-4 bg-white/5 border-t border-white/5 flex gap-3">
-                        <input
-                            type="text"
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                            placeholder="Type your response..."
-                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
-                        />
-                        <button onClick={handleSendMessage} className="p-2 bg-cyan-500 text-white rounded-xl"><Send className="w-5 h-5" /></button>
-                    </div>
-                </div>
-
-                {showCodeEditor && isCodingQuestion && (
-                    <div className="h-[500px] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-                        <CodeEditor problem={{ description: currentQuestion }} onSubmit={handleCodeSubmit} />
                     </div>
                 )}
+
+                {/* Chat messages */}
+                {messages.map((msg) => (
+                    <ChatBubble key={msg.id} message={msg} />
+                ))}
+
+                {/* Loading indicator */}
+                {status === STATUS.LOADING && (
+                    <div className="flex items-end gap-3 justify-start animate-in fade-in duration-300">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                            <Bot className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="bg-white/8 border border-white/10 px-4 py-3 rounded-2xl rounded-bl-sm flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                            <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                            <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                        </div>
+                    </div>
+                )}
+
+                <div ref={chatEndRef} />
             </main>
 
-            {currentStep === 'loading' && (
-                <div className="fixed inset-0 z-[100] bg-black/80 flex flex-col items-center justify-center">
-                    <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-white font-bold">Initializing Interview...</p>
+            {/* ── BOTTOM INPUT AREA ─────────────────────────────────────────── */}
+            <footer className="flex-shrink-0 border-t border-white/8 bg-black/40 backdrop-blur-xl px-4 md:px-6 py-4">
+                {/* Listening indicator banner */}
+                {status === STATUS.LISTENING && (
+                    <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl animate-in fade-in duration-300">
+                        <MicOrb />
+                        <span className="text-xs text-red-300 font-bold">
+                            Listening… speak your answer. Auto-sends after 2.5 s of silence.
+                        </span>
+                    </div>
+                )}
+
+                <div className="flex items-end gap-3">
+                    {/* Text input */}
+                    <div className="flex-1 relative">
+                        <textarea
+                            id="interview-text-input"
+                            ref={inputRef}
+                            rows={1}
+                            value={inputText}
+                            onChange={(e) => setInputText(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            disabled={isInputDisabled}
+                            placeholder={
+                                status === STATUS.IDLE
+                                    ? 'Click "Start Interview" above…'
+                                    : status === STATUS.SPEAKING
+                                    ? 'AI is speaking…'
+                                    : status === STATUS.LOADING
+                                    ? 'AI is thinking…'
+                                    : status === STATUS.LISTENING
+                                    ? 'Speak or type your answer…'
+                                    : 'Type your answer or use the mic…'
+                            }
+                            className={[
+                                'w-full bg-white/5 border rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-600',
+                                'focus:outline-none transition-all duration-300 resize-none leading-relaxed',
+                                isInputDisabled
+                                    ? 'border-white/5 opacity-50 cursor-not-allowed'
+                                    : 'border-white/15 hover:border-white/25 focus:border-cyan-500/50 focus:bg-white/8',
+                                status === STATUS.LISTENING && 'border-red-500/40 bg-red-500/5',
+                            ].filter(Boolean).join(' ')}
+                            style={{ minHeight: '46px', maxHeight: '140px', overflowY: 'auto' }}
+                        />
+                    </div>
+
+                    {/* Mic button */}
+                    {micSupported && (
+                        <button
+                            id="interview-mic-btn"
+                            onClick={handleMicToggle}
+                            disabled={isMicDisabled}
+                            title={status === STATUS.LISTENING ? 'Stop & send' : 'Start speaking'}
+                            className={[
+                                'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 border',
+                                isMicDisabled
+                                    ? 'bg-white/3 border-white/5 text-slate-700 cursor-not-allowed'
+                                    : status === STATUS.LISTENING
+                                    ? 'bg-red-500 border-red-400 text-white shadow-lg shadow-red-500/30 hover:bg-red-400 scale-105'
+                                    : 'bg-white/8 border-white/15 text-slate-300 hover:bg-white/15 hover:text-white hover:border-white/30',
+                            ].filter(Boolean).join(' ')}
+                        >
+                            {status === STATUS.LISTENING
+                                ? <Square className="w-4 h-4 fill-white" />
+                                : <Mic className="w-4 h-4" />}
+                        </button>
+                    )}
+
+                    {/* Send button */}
+                    <button
+                        id="interview-send-btn"
+                        onClick={() => handleSubmit()}
+                        disabled={isInputDisabled || !inputText.trim()}
+                        className={[
+                            'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 border',
+                            isInputDisabled || !inputText.trim()
+                                ? 'bg-white/3 border-white/5 text-slate-700 cursor-not-allowed'
+                                : 'bg-gradient-to-br from-cyan-500 to-blue-600 border-transparent text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95',
+                        ].filter(Boolean).join(' ')}
+                    >
+                        {status === STATUS.LOADING
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <Send className="w-4 h-4" />}
+                    </button>
                 </div>
-            )}
+
+                <p className="mt-2 text-center text-[10px] text-slate-600">
+                    Press <kbd className="bg-white/5 border border-white/10 rounded px-1 py-0.5 font-mono">Enter</kbd> to send &nbsp;·&nbsp; <kbd className="bg-white/5 border border-white/10 rounded px-1 py-0.5 font-mono">Shift+Enter</kbd> for new line
+                </p>
+            </footer>
         </div>
     );
 }
